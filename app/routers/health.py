@@ -1,15 +1,15 @@
 from fastapi import APIRouter
 
-router = APIRouter()
+router = APIRouter(prefix='/api/v1/health')
 
-@router.get("/health", tags=["health"])
+@router.get("/", tags=["health"])
 async def health():
     return {"status": "ok"}
 
-@router.get("/health/live", tags=["health"])
+@router.get("/live", tags=["health"])
 async def live():
     return {"status": "ok"}
 
-@router.get("/health/ready", tags=["health"])
+@router.get("/ready", tags=["health"])
 async def ready():
     return {"status": "ok"}
