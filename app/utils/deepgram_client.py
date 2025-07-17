@@ -1,8 +1,7 @@
 import os
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
-from deepgram import DeepgramClient
-
+from deepgram import DeepgramClient, PrerecordedOptions, FileSource
 
 load_dotenv()
 
@@ -85,6 +84,74 @@ class DeepgramWrapper:
             
         except Exception as e:
             raise Exception(f"Transcription failed: {str(e)}")
+    
+    def transcribe_file(self, 
+                       file_path: str,
+                       language: str = "en-US",
+                       model: str = "nova-3",
+                       smart_format: bool = True,
+                       punctuate: bool = True,
+                       **kwargs) -> Dict[str, Any]:
+        """
+        Transcribe audio from a local file using Deepgram's speech-to-text.
+        
+        Args:
+            file_path: Path to the local audio file
+            language: Language code (e.g., "en-US", "es-ES")
+            model: Deepgram model to use (e.g., "nova-3", "enhanced")
+            smart_format: Enable smart formatting
+            punctuate: Enable punctuation
+            **kwargs: Additional options to pass to Deepgram
+            
+        Returns:
+            Dict containing transcription results
+        """
+        try:
+            # Build options dict for Deepgram API
+            options = {
+                "model": model,
+                "language": language,
+                "smart_format": smart_format,
+                "punctuate": punctuate,
+                **kwargs
+            }
+            
+            # Open and transcribe the local file
+            with open(file_path, "rb") as audio_file:
+
+              buffer_data = audio_file.read()
+              payload: FileSource = {
+                  "buffer": buffer_data,
+              }
+
+              response = self.client.listen.rest.v("1").transcribe_file(payload, options)
+
+            # Extract results from response (same logic as transcribe_audio)
+            transcript = ""
+            confidence = 0.0
+            
+            if hasattr(response, 'results') and response.results:
+                if hasattr(response.results, 'channels') and response.results.channels:
+                    channel = response.results.channels[0]
+                    if hasattr(channel, 'alternatives') and channel.alternatives:
+                        alternative = channel.alternatives[0]
+                        transcript = getattr(alternative, 'transcript', '')
+                        confidence = getattr(alternative, 'confidence', 0.0)
+            
+            return {
+                "transcript": transcript,
+                "confidence": confidence,
+                "metadata": {
+                    "model": model,
+                    "language": language,
+                    "file_path": file_path
+                }
+            }
+            
+        except FileNotFoundError:
+            raise Exception(f"Audio file not found: {file_path}")
+        except Exception as e:
+            raise Exception(f"File transcription failed: {str(e)}")
 
 
 # Convenience function to create a Deepgram wrapper instance
