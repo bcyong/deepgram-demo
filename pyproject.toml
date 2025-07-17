@@ -7,4 +7,5 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.116.1",
     "jiwer>=3.0.3",
+    "deepgram-sdk>=2.12.0",
 ]
