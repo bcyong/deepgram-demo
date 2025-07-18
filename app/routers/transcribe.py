@@ -4,6 +4,7 @@ from typing import List, Optional
 from ..utils.deepgram_client import create_deepgram_client
 import uuid
 from datetime import datetime
+from loguru import logger
 
 
 class TranscribeAudioRequest(BaseModel):
