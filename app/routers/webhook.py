@@ -46,55 +46,32 @@ async def deepgram_webhook(request: Request):
         
         logger.info(f"Raw extra_data from Deepgram: {extra_data}")
         logger.info(f"Extra data type: {type(extra_data)}")
-        if isinstance(extra_data, dict):
-            logger.info(f"Extra data keys: {list(extra_data.keys())}")
-            logger.info(f"Extra data values: {list(extra_data.values())}")
-
         
-        # Parse extra_data if it's a string (JSON)
-        if isinstance(extra_data, str):
+        # Simple parsing: if it's a dict, convert to string, strip outer {}, then parse as JSON
+        if isinstance(extra_data, dict):
+            # Convert dict to string representation
+            extra_str = str(extra_data)
+            logger.info(f"Converted dict to string: {extra_str}")
+            
+            # Strip leading and trailing {}
+            if extra_str.startswith('{') and extra_str.endswith('}'):
+                extra_str = extra_str[1:-1]
+                logger.info(f"Stripped outer braces: {extra_str}")
+            
+            # Parse as JSON
             try:
-                # First try to parse as JSON
+                extra = json.loads('{' + extra_str + '}')
+                logger.info(f"Parsed extra data: {extra}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse extra_data: {e}")
+                extra = {}
+        elif isinstance(extra_data, str):
+            try:
                 extra = json.loads(extra_data)
                 logger.info(f"Parsed extra data as JSON: {extra}")
             except json.JSONDecodeError as e:
-                logger.warning(f"Failed to parse extra_data as JSON: {e}")
-                # Try to handle malformed Python dictionary string
-                try:
-                    # Replace single quotes with double quotes and fix the malformed structure
-                    cleaned_data = extra_data.replace("'", '"')
-                    # Handle the specific malformed case we're seeing
-                    if cleaned_data.startswith('"{'):
-                        cleaned_data = cleaned_data[1:]  # Remove leading quote
-                    if cleaned_data.endswith('}"'):
-                        cleaned_data = cleaned_data[:-1]  # Remove trailing quote
-                    extra = json.loads(cleaned_data)
-                    logger.info(f"Parsed extra data after cleaning: {extra}")
-                except json.JSONDecodeError as e2:
-                    logger.error(f"Failed to parse extra_data even after cleaning: {e2}")
-                    logger.error(f"Original extra_data: {extra_data}")
-                    extra = {}
-        elif isinstance(extra_data, dict):
-            # Handle the case where extra_data is a dict with malformed key
-            # This happens when Deepgram returns {'{"batch_id"': ' "value", ...}'}
-            if len(extra_data) == 1:
-                key, value = list(extra_data.items())[0]
-                # The key is malformed like '{"batch_id"', the value is the rest of the JSON
-                # Reconstruct the proper JSON string
-                if key.startswith('{"') and not key.endswith('"'):
-                    # Key is missing closing quote, value is the rest
-                    reconstructed_json = key + '":' + value
-                    try:
-                        extra = json.loads(reconstructed_json)
-                        logger.info(f"Parsed extra data from reconstructed JSON: {extra}")
-                    except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse reconstructed JSON: {e}")
-                        logger.error(f"Reconstructed JSON: {reconstructed_json}")
-                        extra = {}
-                else:
-                    extra = extra_data
-            else:
-                extra = extra_data
+                logger.error(f"Failed to parse extra_data as JSON: {e}")
+                extra = {}
         else:
             extra = extra_data
         
