@@ -71,7 +71,7 @@ async def transcribe_audio_batch(
                     "smart_format": True,
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
-                    "metadata": {
+                    "extra": {
                         "request_id": request_id,
                         "url_index": i,
                         "total_urls": len(request.audio_urls),
