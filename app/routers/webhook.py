@@ -42,12 +42,20 @@ async def deepgram_webhook(request: Request):
         # Extract extra data from the webhook
         metadata = webhook_data.get("metadata", {})
         request_id = metadata.get("request_id")
-        extra = metadata.get("extra", {})
-        batch_id = extra.get("batch_id")
+        extra_json = metadata.get("extra", "{}")
+        
+        # Parse the extra data JSON string
+        try:
+            extra = json.loads(extra_json) if isinstance(extra_json, str) else extra_json
+        except json.JSONDecodeError:
+            logger.error(f"Failed to parse extra data JSON: {extra_json}")
+            extra = {}
+            
+        batch_id = extra.get("batch_id") or "unknown"
         url_index = extra.get("url_index", 0)
         total_urls = extra.get("total_urls", 1)
-        storage_location = extra.get("storage_location")
-        submitted_at = extra.get("submitted_at")
+        storage_location = extra.get("storage_location") or "unknown"
+        submitted_at = extra.get("submitted_at") or "unknown"
         user_callback_url = extra.get("user_callback_url")
 
         logger.info(f"Extra data: {extra}")

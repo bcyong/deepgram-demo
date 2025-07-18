@@ -5,6 +5,7 @@ from ..utils.deepgram_client import create_deepgram_client
 import uuid
 from datetime import datetime
 from loguru import logger
+import json
 
 
 class TranscribeAudioRequest(BaseModel):
@@ -65,20 +66,22 @@ async def transcribe_audio_batch(
         for i, audio_url in enumerate(request.audio_urls):
             try:
                 # Build options for Deepgram API with comprehensive extra data
+                extra_data = {
+                    "batch_id": batch_id,
+                    "url_index": i,
+                    "total_urls": len(request.audio_urls),
+                    "storage_location": request.storage_location,
+                    "submitted_at": datetime.utcnow().isoformat(),
+                    "user_callback_url": request.user_callback_url,  # User callback in extra data
+                }
+                
                 options = {
                     "model": request.model,
                     "language": request.language,
                     "smart_format": True,
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
-                    "extra": {
-                        "batch_id": batch_id,
-                        "url_index": i,
-                        "total_urls": len(request.audio_urls),
-                        "storage_location": request.storage_location,
-                        "submitted_at": datetime.utcnow().isoformat(),
-                        "user_callback_url": request.user_callback_url,  # User callback in extra data
-                    },
+                    "extra": json.dumps(extra_data),  # Serialize as JSON string
                 }
 
                 logger.info(f"Options: {options}")
