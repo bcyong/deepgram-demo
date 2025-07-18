@@ -11,6 +11,7 @@ router = APIRouter(prefix="/api/v1/webhook")
 class DeepgramWebhookResponse(BaseModel):
     """Formatted response for file output"""
 
+    batch_id: str
     request_id: str
     url_index: int
     total_urls: int
@@ -18,8 +19,6 @@ class DeepgramWebhookResponse(BaseModel):
     transcript: str
     confidence: float
     storage_location: str
-    language: str
-    model: str
     submitted_at: str
     completed_at: str
     user_callback_url: Optional[str] = None
@@ -41,13 +40,13 @@ async def deepgram_webhook(request: Request):
         logger.info(f"Webhook data: {webhook_data}")
 
         # Extract extra data from the webhook
-        extra = webhook_data.get("extra", {})
-        request_id = extra.get("request_id")
+        metadata = webhook_data.get("metadata", {})
+        request_id = metadata.get("request_id")
+        extra = metadata.get("extra", {})
+        batch_id = extra.get("batch_id")
         url_index = extra.get("url_index", 0)
         total_urls = extra.get("total_urls", 1)
         storage_location = extra.get("storage_location")
-        language = extra.get("language", "en-US")
-        model = extra.get("model", "nova-3")
         submitted_at = extra.get("submitted_at")
         user_callback_url = extra.get("user_callback_url")
 
@@ -83,6 +82,7 @@ async def deepgram_webhook(request: Request):
 
         # Create formatted response
         formatted_response = DeepgramWebhookResponse(
+            batch_id=batch_id,
             request_id=request_id,
             url_index=url_index,
             total_urls=total_urls,
@@ -90,8 +90,6 @@ async def deepgram_webhook(request: Request):
             transcript=transcript,
             confidence=confidence,
             storage_location=storage_location,
-            language=language,
-            model=model,
             submitted_at=submitted_at,
             completed_at=datetime.utcnow().isoformat(),
             user_callback_url=user_callback_url,

@@ -16,7 +16,7 @@ class TranscribeAudioRequest(BaseModel):
 
 
 class TranscribeAudioResponse(BaseModel):
-    request_id: str
+    batch_id: str
     audio_urls: List[str]
     storage_location: str
     status: str
@@ -39,11 +39,11 @@ async def transcribe_audio_batch(
     sent to the internal webhook endpoint when complete.
 
     The user callback URL will be called when each transcription is complete.
-    All request tracking is handled via metadata passed to Deepgram.
+    All request tracking is handled via extra data passed to Deepgram.
     """
     try:
         # Generate a unique request ID for this batch
-        request_id = str(uuid.uuid4())
+        batch_id = str(uuid.uuid4())
 
         # Validate input
         if not request.audio_urls:
@@ -61,10 +61,10 @@ async def transcribe_audio_batch(
         base_url = str(http_request.base_url).rstrip("/")
         internal_callback_url = f"{base_url}/api/v1/webhook/deepgram"
 
-        # Submit each URL for transcription with metadata
+        # Submit each URL for transcription with extra data
         for i, audio_url in enumerate(request.audio_urls):
             try:
-                # Build options for Deepgram API with comprehensive metadata
+                # Build options for Deepgram API with comprehensive extra data
                 options = {
                     "model": request.model,
                     "language": request.language,
@@ -72,26 +72,19 @@ async def transcribe_audio_batch(
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
                     "extra": {
-                        "request_id": request_id,
+                        "batch_id": batch_id,
                         "url_index": i,
                         "total_urls": len(request.audio_urls),
                         "storage_location": request.storage_location,
-                        "language": request.language,
-                        "model": request.model,
                         "submitted_at": datetime.utcnow().isoformat(),
-                        "user_callback_url": request.user_callback_url,  # User callback in metadata
-                        "batch_request": {
-                            "audio_urls": request.audio_urls,
-                            "storage_location": request.storage_location,
-                            "user_callback_url": request.user_callback_url,
-                        },
+                        "user_callback_url": request.user_callback_url,  # User callback in extra data
                     },
                 }
 
                 logger.info(f"Options: {options}")
 
                 # Submit transcription request to Deepgram
-                # The metadata will be passed back in the webhook callback
+                # The extra data will be passed back in the webhook callback
                 response = deepgram_client.transcribe_audio(audio_url, **options)
 
             except Exception as e:
@@ -100,7 +93,7 @@ async def transcribe_audio_batch(
                 print(f"Error submitting transcription for URL {audio_url}: {str(e)}")
 
         return TranscribeAudioResponse(
-            request_id=request_id,
+            batch_id=batch_id,
             audio_urls=request.audio_urls,
             storage_location=request.storage_location,
             status="submitted",
