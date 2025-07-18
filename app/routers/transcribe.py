@@ -75,22 +75,13 @@ async def transcribe_audio_batch(
                     "user_callback_url": request.user_callback_url,  # User callback in extra data
                 }
                 
-                # Convert dictionary to list of strings for Deepgram API
-                # Handle empty values by using a placeholder
-                extra_strings = []
-                for key, value in extra_data.items():
-                    if value is None or value == "":
-                        extra_strings.append(f"{key}=<empty>")
-                    else:
-                        extra_strings.append(f"{key}={value}")
-                
                 options = {
                     "model": request.model,
                     "language": request.language,
                     "smart_format": True,
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
-                    "extra": extra_strings,  # Pass as list of strings per Deepgram API spec
+                    "extra": extra_data,
                 }
 
                 logger.info(f"Options: {options}")

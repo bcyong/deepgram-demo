@@ -3,6 +3,7 @@ import json
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from deepgram import DeepgramClient, PrerecordedOptions, FileSource
+from loguru import logger
 
 load_dotenv()
 
@@ -60,6 +61,8 @@ class DeepgramWrapper:
                 "punctuate": punctuate,
                 **kwargs,
             }
+
+            logger.info(f"Options: {options}")
 
             # Use the REST API for transcription
             response = self.client.listen.rest.v("1").transcribe_url(
