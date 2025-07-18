@@ -87,6 +87,8 @@ async def transcribe_audio_batch(
                     },
                 }
 
+                logger.info(f"Options: {options}")
+
                 # Submit transcription request to Deepgram
                 # The metadata will be passed back in the webhook callback
                 response = deepgram_client.transcribe_audio(audio_url, **options)

@@ -51,6 +51,8 @@ async def deepgram_webhook(request: Request):
         submitted_at = metadata.get("submitted_at")
         user_callback_url = metadata.get("user_callback_url")
 
+        logger.info(f"Metadata: {metadata}")
+
         logger.info(f"Extracted metadata: request_id={request_id}, url_index={url_index}")
 
         # Extract transcription results
