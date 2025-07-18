@@ -51,11 +51,14 @@ async def deepgram_webhook(request: Request):
         submitted_at = metadata.get("submitted_at")
         user_callback_url = metadata.get("user_callback_url")
 
+        logger.info(f"Extracted metadata: request_id={request_id}, url_index={url_index}")
+
         # Extract transcription results
         results = webhook_data.get("results", {})
         channels = results.get("channels", [])
 
         if not channels:
+            logger.error("No channels found in webhook data")
             raise HTTPException(
                 status_code=400, detail="No transcription results found"
             )
@@ -64,6 +67,7 @@ async def deepgram_webhook(request: Request):
         alternatives = channel.get("alternatives", [])
 
         if not alternatives:
+            logger.error("No alternatives found in channel")
             raise HTTPException(
                 status_code=400, detail="No transcription alternatives found"
             )
@@ -71,6 +75,8 @@ async def deepgram_webhook(request: Request):
         alternative = alternatives[0]
         transcript = alternative.get("transcript", "")
         confidence = alternative.get("confidence", 0.0)
+
+        logger.info(f"Extracted transcript: {transcript[:50]}... (confidence: {confidence})")
 
         # Get the original audio URL from the webhook
         audio_url = webhook_data.get("metadata", {}).get("url") or "unknown"
@@ -98,39 +104,21 @@ async def deepgram_webhook(request: Request):
         # Generate filename based on request_id and url_index
         filename = f"{request_id}_url_{url_index}.json"
 
-        # # Create output directory if it doesn't exist
-        # output_dir = "transcription_outputs"
-        # os.makedirs(output_dir, exist_ok=True)
-
-        # # Write to file
-        # output_path = os.path.join(output_dir, filename)
-        # with open(output_path, 'w', encoding='utf-8') as f:
-        #     json.dump(output_json, f, indent=2, ensure_ascii=False)
-
-        # # TODO: In production, save to the specified storage_location
-        # # For now, we're saving locally
-
-        # # Call user callback if provided
-        # if user_callback_url:
-        #     try:
-        #         # TODO: Implement async HTTP call to user callback
-        #         # This would typically use httpx or aiohttp
-        #         print(f"Would call user callback: {user_callback_url}")
-        #         print(f"With data: {json.dumps(output_json, indent=2)}")
-        #     except Exception as e:
-        #         print(f"Error calling user callback: {str(e)}")
+        logger.info(f"Successfully processed webhook for request_id={request_id}, filename={filename}")
 
         return {
             "status": "success",
-            "message": f"Transcription result saved to {filename}",
+            "message": f"Transcription result processed: {filename}",
             "request_id": request_id,
             "url_index": url_index,
             "filename": filename,
         }
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
+        logger.error(f"Webhook processing failed: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Webhook processing failed: {str(e)}"
         )
