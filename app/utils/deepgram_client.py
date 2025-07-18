@@ -53,14 +53,14 @@ class DeepgramWrapper:
             Dict containing transcription results
         """
         try:
-            # Build options dict for Deepgram API
-            options = {
-                "model": model,
-                "language": language,
-                "smart_format": smart_format,
-                "punctuate": punctuate,
+            # Build options for Deepgram API
+            options = PrerecordedOptions(
+                model=model,
+                language=language,
+                smart_format=smart_format,
+                punctuate=punctuate,
                 **kwargs,
-            }
+            )
 
             logger.info(f"Options: {options}")
 
@@ -118,14 +118,14 @@ class DeepgramWrapper:
             Dict containing transcription results
         """
         try:
-            # Build options dict for Deepgram API
-            options = {
-                "model": model,
-                "language": language,
-                "smart_format": smart_format,
-                "punctuate": punctuate,
+            # Build options for Deepgram API
+            options = PrerecordedOptions(
+                model=model,
+                language=language,
+                smart_format=smart_format,
+                punctuate=punctuate,
                 **kwargs,
-            }
+            )
 
             # Open and transcribe the local file
             with open(file_path, "rb") as audio_file:

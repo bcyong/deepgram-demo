@@ -81,8 +81,11 @@ async def transcribe_audio_batch(
                     "smart_format": True,
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
-                    "extra": json.dumps(extra_data),  # Convert to JSON string for Deepgram
                 }
+                
+                # Add extra data as query parameters in the format expected by PrerecordedOptions
+                extra_list = [f"{key}:{value}" for key, value in extra_data.items()]
+                options["extra"] = extra_list
 
                 logger.info(f"Options: {options}")
 

@@ -47,24 +47,10 @@ async def deepgram_webhook(request: Request):
         logger.info(f"Raw extra_data from Deepgram: {extra_data}")
         logger.info(f"Extra data type: {type(extra_data)}")
         
-        # Simple parsing: if it's a dict, convert to string, strip outer {}, then parse as JSON
+        # Parse extra_data - should now be a proper dictionary from Deepgram
         if isinstance(extra_data, dict):
-            # Convert dict to string representation
-            extra_str = str(extra_data)
-            logger.info(f"Converted dict to string: {extra_str}")
-            
-            # Strip leading and trailing {}
-            if extra_str.startswith('{') and extra_str.endswith('}'):
-                extra_str = extra_str[1:-1]
-                logger.info(f"Stripped outer braces: {extra_str}")
-            
-            # Parse as JSON
-            try:
-                extra = json.loads('{' + extra_str + '}')
-                logger.info(f"Parsed extra data: {extra}")
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse extra_data: {e}")
-                extra = {}
+            extra = extra_data
+            logger.info(f"Extra data is already a dict: {extra}")
         elif isinstance(extra_data, str):
             try:
                 extra = json.loads(extra_data)
@@ -74,7 +60,7 @@ async def deepgram_webhook(request: Request):
                 extra = {}
         else:
             extra = extra_data
-        
+
         # batch_id = extra.get("batch_id") or "unknown"
         # url_index = extra.get("url_index", 0)
         # total_urls = extra.get("total_urls", 1)
