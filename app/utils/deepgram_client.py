@@ -29,7 +29,7 @@ class DeepgramWrapper:
 
         self.client = DeepgramClient(self.api_key)
 
-    def transcribe_audio(
+    def transcribe_audio_url(
         self,
         audio_url: str,
         language: str = "en-US",
@@ -94,7 +94,7 @@ class DeepgramWrapper:
         except Exception as e:
             raise Exception(f"Transcription failed: {str(e)}")
 
-    def transcribe_file(
+    def transcribe_audio_file(
         self,
         file_path: str,
         language: str = "en-US",

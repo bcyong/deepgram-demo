@@ -5,7 +5,6 @@ from ..utils.deepgram_client import create_deepgram_client
 import uuid
 from datetime import datetime
 from loguru import logger
-import json
 
 
 class TranscribeAudioRequest(BaseModel):
@@ -42,6 +41,8 @@ async def transcribe_audio_batch(
     The user callback URL will be called when each transcription is complete.
     All request tracking is handled via extra data passed to Deepgram.
     """
+
+    logger.info(f"Transcribe audio batch request: {request}")
     try:
         # Generate a unique request ID for this batch
         batch_id = str(uuid.uuid4())
@@ -60,7 +61,9 @@ async def transcribe_audio_batch(
 
         # Build full URL for internal webhook endpoint
         base_url = str(http_request.base_url).rstrip("/")
-        internal_callback_url = f"{base_url}/api/v1/webhook/deepgram"
+        internal_callback_url = (
+            f"{base_url}/api/v1/webhook/deepgram/batch_url_completed"
+        )
 
         # Submit each URL for transcription with extra data
         for i, audio_url in enumerate(request.audio_urls):
@@ -74,7 +77,7 @@ async def transcribe_audio_batch(
                     "submitted_at": datetime.utcnow().isoformat(),
                     "user_callback_url": request.user_callback_url,  # User callback in extra data
                 }
-                
+
                 options = {
                     "model": request.model,
                     "language": request.language,
@@ -82,21 +85,23 @@ async def transcribe_audio_batch(
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
                 }
-                
+
                 # Add extra data as query parameters in the format expected by PrerecordedOptions
                 extra_list = [f"{key}:{value}" for key, value in extra_data.items()]
                 options["extra"] = extra_list
 
-                logger.info(f"Options: {options}")
-
                 # Submit transcription request to Deepgram
                 # The extra data will be passed back in the webhook callback
-                response = deepgram_client.transcribe_audio(audio_url, **options)
+                response = deepgram_client.transcribe_audio_url(audio_url, **options)
+
+                logger.info(f"Deepgram client response: {response}")
 
             except Exception as e:
                 # Log error but continue with other URLs
                 # In a production system, you might want to handle this differently
-                print(f"Error submitting transcription for URL {audio_url}: {str(e)}")
+                logger.error(
+                    f"Error submitting transcription for URL {audio_url}: {str(e)}"
+                )
 
         return TranscribeAudioResponse(
             batch_id=batch_id,
