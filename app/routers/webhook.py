@@ -40,8 +40,8 @@ async def deepgram_webhook(request: Request):
 
         logger.info(f"Webhook data: {webhook_data}")
 
-        # Extract metadata from the webhook
-        metadata = webhook_data.get("metadata", {})
+        # Extract extra data from the webhook
+        extra = webhook_data.get("extra", {})
         request_id = metadata.get("request_id")
         url_index = metadata.get("url_index", 0)
         total_urls = metadata.get("total_urls", 1)
@@ -51,7 +51,7 @@ async def deepgram_webhook(request: Request):
         submitted_at = metadata.get("submitted_at")
         user_callback_url = metadata.get("user_callback_url")
 
-        logger.info(f"Metadata: {metadata}")
+        logger.info(f"Extra data: {extra}")
 
         logger.info(f"Extracted metadata: request_id={request_id}, url_index={url_index}")
 
