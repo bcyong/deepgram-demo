@@ -45,30 +45,15 @@ async def deepgram_webhook(request: Request):
         extra_data = metadata.get("extra", {})
         
         logger.info(f"Raw extra_data from Deepgram: {extra_data}")
-        logger.info(f"Extra data type: {type(extra_data)}")
-        
-        # Parse extra_data - should now be a proper dictionary from Deepgram
-        if isinstance(extra_data, dict):
-            extra = extra_data
-            logger.info(f"Extra data is already a dict: {extra}")
-        elif isinstance(extra_data, str):
-            try:
-                extra = json.loads(extra_data)
-                logger.info(f"Parsed extra data as JSON: {extra}")
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse extra_data as JSON: {e}")
-                extra = {}
-        else:
-            extra = extra_data
 
-        # batch_id = extra.get("batch_id") or "unknown"
-        # url_index = extra.get("url_index", 0)
-        # total_urls = extra.get("total_urls", 1)
-        # storage_location = extra.get("storage_location") or "unknown"
-        # submitted_at = extra.get("submitted_at") or "unknown"
-        # user_callback_url = extra.get("user_callback_url")
+        batch_id = extra_data.get("batch_id") or "unknown"
+        url_index = extra_data.get("url_index", 0)
+        total_urls = extra_data.get("total_urls", 1)
+        storage_location = extra_data.get("storage_location") or "unknown"
+        submitted_at = extra_data.get("submitted_at") or "unknown"
+        user_callback_url = extra_data.get("user_callback_url")
 
-        # logger.info(f"Extra data: {extra}")
+        logger.info(f"Extra data: {extra_data}")
 
         # Extract transcription results
         results = webhook_data.get("results", {})
@@ -98,27 +83,26 @@ async def deepgram_webhook(request: Request):
         # Get the original audio URL from the webhook
         audio_url = webhook_data.get("metadata", {}).get("url") or "unknown"
 
-        # # Create formatted response
-        # formatted_response = DeepgramWebhookResponse(
-        #     batch_id=batch_id,
-        #     request_id=request_id,
-        #     url_index=url_index,
-        #     total_urls=total_urls,
-        #     audio_url=audio_url,
-        #     transcript=transcript,
-        #     confidence=confidence,
-        #     storage_location=storage_location,
-        #     submitted_at=submitted_at,
-        #     completed_at=datetime.utcnow().isoformat(),
-        #     user_callback_url=user_callback_url,
-        #     extra=extra,
-        # )
+        # Create formatted response
+        formatted_response = DeepgramWebhookResponse(
+            batch_id=batch_id,
+            request_id=request_id,
+            url_index=url_index,
+            total_urls=total_urls,
+            audio_url=audio_url,
+            transcript=transcript,
+            confidence=confidence,
+            storage_location=storage_location,
+            submitted_at=submitted_at,
+            completed_at=datetime.utcnow().isoformat(),
+            user_callback_url=user_callback_url,
+            extra=extra_data,
+        )
 
-        # # Convert to JSON for file output
-        # output_json = formatted_response.model_dump()
+        # Convert to JSON for file output
+        output_json = formatted_response.model_dump()
 
         # Generate filename based on request_id and url_index
-        url_index = -1
         filename = f"{request_id}_url_{url_index}.json"
 
         logger.info(f"Successfully processed webhook for request_id={request_id}, filename={filename}")
