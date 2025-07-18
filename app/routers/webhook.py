@@ -102,7 +102,7 @@ async def deepgram_webhook(request: Request):
         output_json = formatted_response.model_dump()
 
         # Generate filename based on request_id and url_index
-        filename = f"{request_id}_url_{url_index}.json"
+        filename = f"{batch_id}_url_{url_index}.json"
 
         # Create temporary file and upload to GCS
         try:
