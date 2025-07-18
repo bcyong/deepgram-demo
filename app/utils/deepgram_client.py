@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from deepgram import DeepgramClient, PrerecordedOptions, FileSource
@@ -60,17 +61,19 @@ class DeepgramWrapper:
                 {"url": audio_url}, options
             )
             
-            # Extract results from response
+            # Parse response as JSON
+            response_dict = json.loads(str(response))
+            
+            # Extract results from JSON response
             transcript = ""
             confidence = 0.0
             
-            if hasattr(response, 'results') and response.results:
-                if hasattr(response.results, 'channels') and response.results.channels:
-                    channel = response.results.channels[0]
-                    if hasattr(channel, 'alternatives') and channel.alternatives:
-                        alternative = channel.alternatives[0]
-                        transcript = getattr(alternative, 'transcript', '')
-                        confidence = getattr(alternative, 'confidence', 0.0)
+            if response_dict.get('results') and response_dict['results'].get('channels'):
+                channel = response_dict['results']['channels'][0]
+                if channel.get('alternatives'):
+                    alternative = channel['alternatives'][0]
+                    transcript = alternative.get('transcript', '')
+                    confidence = alternative.get('confidence', 0.0)
             
             return {
                 "transcript": transcript,
@@ -118,25 +121,25 @@ class DeepgramWrapper:
             
             # Open and transcribe the local file
             with open(file_path, "rb") as audio_file:
+                buffer_data = audio_file.read()
+                payload: FileSource = {
+                    "buffer": buffer_data,
+                }
+                response = self.client.listen.rest.v("1").transcribe_file(payload, options)
 
-              buffer_data = audio_file.read()
-              payload: FileSource = {
-                  "buffer": buffer_data,
-              }
-
-              response = self.client.listen.rest.v("1").transcribe_file(payload, options)
-
-            # Extract results from response (same logic as transcribe_audio)
+            # Parse response as JSON
+            response_dict = json.loads(str(response))
+            
+            # Extract results from JSON response (same logic as transcribe_audio)
             transcript = ""
             confidence = 0.0
             
-            if hasattr(response, 'results') and response.results:
-                if hasattr(response.results, 'channels') and response.results.channels:
-                    channel = response.results.channels[0]
-                    if hasattr(channel, 'alternatives') and channel.alternatives:
-                        alternative = channel.alternatives[0]
-                        transcript = getattr(alternative, 'transcript', '')
-                        confidence = getattr(alternative, 'confidence', 0.0)
+            if response_dict.get('results') and response_dict['results'].get('channels'):
+                channel = response_dict['results']['channels'][0]
+                if channel.get('alternatives'):
+                    alternative = channel['alternatives'][0]
+                    transcript = alternative.get('transcript', '')
+                    confidence = alternative.get('confidence', 0.0)
             
             return {
                 "transcript": transcript,
