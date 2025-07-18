@@ -81,7 +81,7 @@ async def transcribe_audio_batch(
                     "smart_format": True,
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
-                    "extra": json.dumps(extra_data),  # Serialize as JSON string
+                    "extra": extra_data,  # Pass as dictionary directly
                 }
 
                 logger.info(f"Options: {options}")
