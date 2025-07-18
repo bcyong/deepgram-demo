@@ -23,7 +23,7 @@ class DeepgramWebhookResponse(BaseModel):
     submitted_at: str
     completed_at: str
     user_callback_url: Optional[str] = None
-    metadata: Dict[str, Any]
+    extra: Dict[str, Any]
 
 
 @router.post("/deepgram", tags=["webhook"])
@@ -42,18 +42,16 @@ async def deepgram_webhook(request: Request):
 
         # Extract extra data from the webhook
         extra = webhook_data.get("extra", {})
-        request_id = metadata.get("request_id")
-        url_index = metadata.get("url_index", 0)
-        total_urls = metadata.get("total_urls", 1)
-        storage_location = metadata.get("storage_location")
-        language = metadata.get("language", "en-US")
-        model = metadata.get("model", "nova-3")
-        submitted_at = metadata.get("submitted_at")
-        user_callback_url = metadata.get("user_callback_url")
+        request_id = extra.get("request_id")
+        url_index = extra.get("url_index", 0)
+        total_urls = extra.get("total_urls", 1)
+        storage_location = extra.get("storage_location")
+        language = extra.get("language", "en-US")
+        model = extra.get("model", "nova-3")
+        submitted_at = extra.get("submitted_at")
+        user_callback_url = extra.get("user_callback_url")
 
         logger.info(f"Extra data: {extra}")
-
-        logger.info(f"Extracted metadata: request_id={request_id}, url_index={url_index}")
 
         # Extract transcription results
         results = webhook_data.get("results", {})
@@ -97,7 +95,7 @@ async def deepgram_webhook(request: Request):
             submitted_at=submitted_at,
             completed_at=datetime.utcnow().isoformat(),
             user_callback_url=user_callback_url,
-            metadata=metadata,
+            extra=extra,
         )
 
         # Convert to JSON for file output
