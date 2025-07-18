@@ -122,7 +122,7 @@ async def deepgram_webhook(request: Request):
 
         return {
             "status": "success",
-            "message": f"Transcription result saved to {output_path}",
+            "message": f"Transcription result saved to {filename}",
             "request_id": request_id,
             "url_index": url_index,
             "filename": filename,
