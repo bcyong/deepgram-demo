@@ -3,10 +3,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import json
 from datetime import datetime
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 router = APIRouter(prefix="/api/v1/webhook")
 
