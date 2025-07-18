@@ -45,10 +45,33 @@ async def deepgram_webhook(request: Request):
         extra_data = metadata.get("extra", {})
         
         logger.info(f"Raw extra_data from Deepgram: {extra_data}")
-        if isinstance(extra_data, list):
-            logger.info(f"Extra data list items: {[f'{type(item)}: {item}' for item in extra_data]}")
+
         
-        # extra = extra_data
+        # Parse extra_data if it's a string (JSON)
+        if isinstance(extra_data, str):
+            try:
+                # First try to parse as JSON
+                extra = json.loads(extra_data)
+                logger.info(f"Parsed extra data as JSON: {extra}")
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse extra_data as JSON: {e}")
+                # Try to handle malformed Python dictionary string
+                try:
+                    # Replace single quotes with double quotes and fix the malformed structure
+                    cleaned_data = extra_data.replace("'", '"')
+                    # Handle the specific malformed case we're seeing
+                    if cleaned_data.startswith('"{'):
+                        cleaned_data = cleaned_data[1:]  # Remove leading quote
+                    if cleaned_data.endswith('}"'):
+                        cleaned_data = cleaned_data[:-1]  # Remove trailing quote
+                    extra = json.loads(cleaned_data)
+                    logger.info(f"Parsed extra data after cleaning: {extra}")
+                except json.JSONDecodeError as e2:
+                    logger.error(f"Failed to parse extra_data even after cleaning: {e2}")
+                    logger.error(f"Original extra_data: {extra_data}")
+                    extra = {}
+        else:
+            extra = extra_data
         
         # batch_id = extra.get("batch_id") or "unknown"
         # url_index = extra.get("url_index", 0)

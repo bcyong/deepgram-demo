@@ -81,7 +81,7 @@ async def transcribe_audio_batch(
                     "smart_format": True,
                     "punctuate": True,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
-                    "extra": extra_data,
+                    "extra": json.dumps(extra_data),  # Convert to JSON string for Deepgram
                 }
 
                 logger.info(f"Options: {options}")
