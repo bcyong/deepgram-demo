@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from ..utils.deepgram_client import create_deepgram_client
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from loguru import logger
 
 
@@ -12,6 +12,8 @@ class TranscribeAudioRequest(BaseModel):
     storage_location: str
     language: str = "en-US"
     model: str = "nova-3"
+    use_url_as_filename: bool = False
+    filename_prefix: str = ""
     user_callback_url: Optional[str] = None
 
 
@@ -74,7 +76,9 @@ async def transcribe_audio_batch(
                     "url_index": i,
                     "total_urls": len(request.audio_urls),
                     "storage_location": request.storage_location,
-                    "submitted_at": datetime.utcnow().isoformat(),
+                    "use_url_as_filename": request.use_url_as_filename,
+                    "filename_prefix": request.filename_prefix,
+                    "submitted_at": datetime.now(timezone.utc).isoformat(),
                     "user_callback_url": request.user_callback_url,  # User callback in extra data
                 }
 
@@ -108,7 +112,7 @@ async def transcribe_audio_batch(
             audio_urls=request.audio_urls,
             storage_location=request.storage_location,
             status="submitted",
-            submitted_at=datetime.utcnow().isoformat(),
+            submitted_at=datetime.now(timezone.utc).isoformat(),
             user_callback_url=request.user_callback_url or "",
         )
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from loguru import logger
 import tempfile
 import os
@@ -49,9 +49,10 @@ async def deepgram_webhook(request: Request):
         batch_id = extra_data.get("batch_id") or "unknown"
         url_index = extra_data.get("url_index", 0)
         total_urls = extra_data.get("total_urls", 1)
-        storage_location = extra_data.get("storage_location") or "unknown"
         submitted_at = extra_data.get("submitted_at") or "unknown"
-        user_callback_url = extra_data.get("user_callback_url")
+        use_url_as_filename = extra_data.get("use_url_as_filename", False)
+        filename_prefix = extra_data.get("filename_prefix", "")
+        user_callback_url = extra_data.get("user_callback_url", "")
 
         logger.info(f"Extra data: {extra_data}")
 
@@ -95,14 +96,18 @@ async def deepgram_webhook(request: Request):
             transcript=transcript,
             confidence=confidence,
             submitted_at=submitted_at,
-            completed_at=datetime.utcnow().isoformat(),
+            completed_at=datetime.now(timezone.utc).isoformat(),
         )
 
         # Convert to JSON for file output
         output_json = formatted_response.model_dump()
 
-        # Generate filename based on request_id and url_index
-        filename = f"{batch_id}_url_{url_index}.json"
+        if use_url_as_filename:
+            filename = f"{audio_url.split('/')[-1]}.json"
+        elif filename_prefix != "":
+            filename = f"{filename_prefix}_{url_index}.json"
+        else:
+            filename = f"{batch_id}_url_{url_index}.json"
 
         # Create temporary file and upload to GCS
         try:
