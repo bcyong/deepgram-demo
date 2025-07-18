@@ -44,14 +44,26 @@ async def deepgram_webhook(request: Request):
         request_id = metadata.get("request_id")
         extra_data = metadata.get("extra", {})
         
+        logger.info(f"Raw extra_data from Deepgram: {extra_data} (type: {type(extra_data)})")
+        if isinstance(extra_data, list):
+            logger.info(f"Extra data list items: {[f'{type(item)}: {item}' for item in extra_data]}")
+        
         # Handle extra data which could be a list of strings, dict, or malformed
         extra = {}
         if isinstance(extra_data, list):
             # Reconstruct dictionary from list of "key=value" strings
             for item in extra_data:
                 if isinstance(item, str) and "=" in item:
-                    key, value = item.split("=", 1)
-                    extra[key] = value
+                    # Split on first "=" only to handle values that contain "="
+                    parts = item.split("=", 1)
+                    if len(parts) == 2:
+                        key, value = parts
+                        # Convert placeholder back to empty string
+                        if value == "<empty>":
+                            value = ""
+                        extra[key] = value
+                    else:
+                        logger.warning(f"Malformed extra data item: {item}")
         elif isinstance(extra_data, dict):
             extra = extra_data
         elif isinstance(extra_data, str):

@@ -76,7 +76,13 @@ async def transcribe_audio_batch(
                 }
                 
                 # Convert dictionary to list of strings for Deepgram API
-                extra_strings = [f"{key}={value}" for key, value in extra_data.items()]
+                # Handle empty values by using a placeholder
+                extra_strings = []
+                for key, value in extra_data.items():
+                    if value is None or value == "":
+                        extra_strings.append(f"{key}=<empty>")
+                    else:
+                        extra_strings.append(f"{key}={value}")
                 
                 options = {
                     "model": request.model,
