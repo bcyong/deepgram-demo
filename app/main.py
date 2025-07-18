@@ -1,6 +1,11 @@
 from fastapi import FastAPI
-
+import logging
 from .routers import health, audit, transcribe, webhook
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+logger.info("Starting the application")
 
 app = FastAPI()
 

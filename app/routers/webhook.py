@@ -2,8 +2,11 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import json
-import os
 from datetime import datetime
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/webhook")
 
@@ -37,6 +40,8 @@ async def deepgram_webhook(request: Request):
     try:
         # Parse the incoming webhook payload
         webhook_data = await request.json()
+
+        logger.info(f"Webhook data: {webhook_data}")
 
         # Extract metadata from the webhook
         metadata = webhook_data.get("metadata", {})
