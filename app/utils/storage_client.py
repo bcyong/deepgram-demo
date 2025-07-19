@@ -5,13 +5,12 @@ from loguru import logger
 
 load_dotenv()
 
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = os.getenv("REDIS_PORT", 6379)
+REDIS_LINK = os.getenv("REDIS_LINK", "redis://localhost:6379")
 
 
 def get_redis_client():
     try:
-        return redis.Redis(host=REDIS_HOST, port=int(REDIS_PORT), db=0)
+        return redis.Redis.from_url(REDIS_LINK)
     except Exception as e:
         logger.warning(f"Failed to connect to Redis: {e}")
         return None
