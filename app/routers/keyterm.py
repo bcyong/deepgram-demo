@@ -10,21 +10,21 @@ class KeytermRequest(pydantic.BaseModel):
     keyterm: str
 
 
-@router.post("/add")
+@router.post("/add", tags=["keyterm"])
 async def add_keyterm(keyterm_request: KeytermRequest):
     logger.info(f"Adding keyterm: {keyterm_request.keyterm}")
     keyterm_manager.add_keyterm(keyterm_request.keyterm)
     return {"message": "Keyterm added"}
 
 
-@router.post("/delete")
+@router.post("/delete", tags=["keyterm"])
 async def delete_keyterm(keyterm_request: KeytermRequest):
     logger.info(f"Deleting keyterm: {keyterm_request.keyterm}")
     keyterm_manager.delete_keyterm(keyterm_request.keyterm)
     return {"message": "Keyterm deleted"}
 
 
-@router.get("/list")
+@router.get("/list", tags=["keyterm"])
 async def list_keyterms():
     logger.info("Listing keyterms")
     keyterms = keyterm_manager.get_all_keyterms()

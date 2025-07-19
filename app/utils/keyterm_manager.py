@@ -8,11 +8,13 @@ def add_keyterm(keyterm: str):
     storage_client.set_value(key, "1")
     logger.info(f"Stored keyterm: {keyterm}")
 
+
 def delete_keyterm(keyterm: str):
     """Delete a keyterm with 'keyterm:' prefix"""
     key = f"keyterm:{keyterm}"
     storage_client.delete_value(key)
     logger.info(f"Deleted keyterm: {keyterm}")
+
 
 def get_all_keyterms():
     """Get all keyterms with 'keyterm:' prefix"""
