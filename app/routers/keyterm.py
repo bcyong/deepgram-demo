@@ -2,26 +2,27 @@ from fastapi import APIRouter
 from ..utils import keyterm_manager
 import pydantic
 from loguru import logger
+from typing import List
 
 router = APIRouter(prefix="/api/v1/keyterm")
 
 
 class KeytermRequest(pydantic.BaseModel):
-    keyterm: str
+    keyterms: List[str]
 
 
 @router.post("/add", tags=["keyterm"])
 async def add_keyterm(keyterm_request: KeytermRequest):
-    logger.info(f"Adding keyterm: {keyterm_request.keyterm}")
-    await keyterm_manager.add_keyterm(keyterm_request.keyterm)
-    return {"message": "Keyterm added"}
+    logger.info(f"Adding keyterms: {keyterm_request.keyterms}")
+    await keyterm_manager.add_keyterms(keyterm_request.keyterms)
+    return {"message": f"Keyterms {keyterm_request.keyterms} added"}
 
 
 @router.post("/delete", tags=["keyterm"])
 async def delete_keyterm(keyterm_request: KeytermRequest):
-    logger.info(f"Deleting keyterm: {keyterm_request.keyterm}")
-    await keyterm_manager.delete_keyterm(keyterm_request.keyterm)
-    return {"message": "Keyterm deleted"}
+    logger.info(f"Deleting keyterms: {keyterm_request.keyterms}")
+    await keyterm_manager.delete_keyterms(keyterm_request.keyterms)
+    return {"message": f"Keyterms {keyterm_request.keyterms} deleted"}
 
 
 @router.get("/list", tags=["keyterm"])
