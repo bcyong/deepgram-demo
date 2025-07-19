@@ -18,7 +18,7 @@ async def add_keyterm(keyterm_request: KeytermRequest):
     return {"message": f"Keyterms {keyterm_request.keyterms} added"}
 
 
-@router.post("/delete", tags=["keyterm"])
+@router.delete("/delete", tags=["keyterm"])
 async def delete_keyterm(keyterm_request: KeytermRequest):
     logger.info(f"Deleting keyterms: {keyterm_request.keyterms}")
     await keyterm_manager.delete_keyterms(keyterm_request.keyterms)
