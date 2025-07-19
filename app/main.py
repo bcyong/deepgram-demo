@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from loguru import logger
-from .routers import health, audit, transcribe, webhook, keyterm
+from .routers import health, audit, transcribe, webhook, keyterm, keyword
 
 logger.info("Starting the application")
 
@@ -11,3 +11,4 @@ app.include_router(audit.router)
 app.include_router(transcribe.router)
 app.include_router(webhook.router)
 app.include_router(keyterm.router)
+app.include_router(keyword.router)
