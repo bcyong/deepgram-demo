@@ -13,4 +13,5 @@ dependencies = [
     "python-json-logger>=2.0.0",
     "loguru>=0.7.3",
     "google-cloud-storage>=3.2.0",
+    "redis>=6.2.0",
 ]

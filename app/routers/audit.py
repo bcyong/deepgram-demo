@@ -81,7 +81,9 @@ async def audit_audio(request: AuditAudioRequest):
 
         # Create Deepgram client and transcribe the hypothesis audio
         deepgram_client = create_deepgram_client()
-        transcription_result = deepgram_client.transcribe_audio_url(request.hypothesis_url)
+        transcription_result = deepgram_client.transcribe_audio_url(
+            request.hypothesis_url
+        )
 
         # Get the transcript from Deepgram
         hypothesis_transcript = transcription_result["transcript"]
