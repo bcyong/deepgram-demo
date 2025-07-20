@@ -18,11 +18,6 @@ class AuditAudioRequest(BaseModel):
     hypothesis_url: str
 
 
-class AuditAudioFileRequest(BaseModel):
-    reference: str
-    hypothesis_file: UploadFile = File(...)
-
-
 class AuditTextResponse(BaseModel):
     reference: str
     hypothesis: str
@@ -113,7 +108,7 @@ async def audit_audio(request: AuditAudioRequest):
 
 
 @router.post("/audio-file", response_model=AuditAudioResponse, tags=["audit"])
-async def audit_audio_file(request: AuditAudioFileRequest):
+async def audit_audio_file(reference: str, audio_file: UploadFile = File(...)):
     """
     Calculate Word Error Rate (WER) between reference text and uploaded audio file.
 
@@ -121,19 +116,19 @@ async def audit_audio_file(request: AuditAudioFileRequest):
     """
     try:
         # Validate file type
-        if not request.hypothesis_file.content_type or not request.hypothesis_file.content_type.startswith(
+        if not audio_file.content_type or not audio_file.content_type.startswith(
             "audio/"
         ):
             raise HTTPException(status_code=400, detail="File must be an audio file")
 
         # Create temporary file to store the uploaded audio
-        filename = request.hypothesis_file.filename or "audio"
+        filename = audio_file.filename or "audio"
         file_extension = filename.split(".")[-1] if "." in filename else "wav"
         with tempfile.NamedTemporaryFile(
             delete=False, suffix=f".{file_extension}"
         ) as temp_file:
             # Write uploaded file content to temporary file
-            content = await request.hypothesis_file.read()
+            content = await audio_file.read()
             temp_file.write(content)
             temp_file_path = temp_file.name
 
@@ -146,10 +141,10 @@ async def audit_audio_file(request: AuditAudioFileRequest):
             hypothesis_transcript = transcription_result["transcript"]
 
             # Calculate WER between reference and transcribed hypothesis
-            wer_result = calculate_wer(request.reference, hypothesis_transcript)
+            wer_result = calculate_wer(reference, hypothesis_transcript)
 
             return AuditAudioResponse(
-                reference=request.reference,
+                reference=reference,
                 hypothesis_url="",
                 hypothesis_transcript=hypothesis_transcript,
                 reference_word_count=wer_result.reference_word_count,
