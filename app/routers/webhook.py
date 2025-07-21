@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
+from locale import str
 from pydantic import BaseModel
+from typing import Dict, List, Optional, Any
 import json
 from datetime import datetime, timezone
 from loguru import logger
@@ -21,8 +23,81 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     audio_url: str
     transcript: str
     confidence: float
+    summary: Optional[str] = None
+    sentiment: Optional[str] = None
+    intents: Optional[List[str]] = None
     submitted_at: str
     completed_at: str
+
+
+def build_transcript(results: Dict[str, Any], diarize: bool = False) -> str:
+    """
+    Build transcript from Deepgram results.
+    
+    Args:
+        results: The results object from Deepgram webhook data
+        diarize: Whether to build a diarized transcript
+    
+    Returns:
+        Formatted transcript string
+    """
+    channels = results.get("channels", [])
+    
+    if not channels:
+        raise ValueError("No channels found in webhook data")
+    
+    channel = channels[0]
+    alternatives = channel.get("alternatives", [])
+    
+    if not alternatives:
+        raise ValueError("No transcription alternatives found")
+    
+    alternative = alternatives[0]
+    
+    if diarize:
+        logger.info("Building diarized transcript")
+        # Build diarized transcript from words array
+        words = alternative.get("words", [])
+        if not words:
+            logger.warning(
+                "No words found for diarization, falling back to regular transcript"
+            )
+            return alternative.get("transcript", "")
+        
+        # Build diarized transcript preserving conversation flow
+        diarized_lines = []
+        current_speaker = None
+        current_segment = []
+        
+        for word in words:
+            speaker = word.get("speaker", 0)
+            word_text = word.get("word", "")
+            
+            # If speaker changes, save current segment and start new one
+            if current_speaker is not None and speaker != current_speaker:
+                if current_segment:
+                    speaker_text = " ".join(current_segment)
+                    diarized_lines.append(
+                        f"Speaker {current_speaker}: {speaker_text}"
+                    )
+                current_segment = []
+            
+            current_speaker = speaker
+            current_segment.append(word_text)
+        
+        # Don't forget the last segment
+        if current_segment:
+            speaker_text = " ".join(current_segment)
+            diarized_lines.append(f"Speaker {current_speaker}: {speaker_text}")
+        
+        transcript = "\n".join(diarized_lines)
+        logger.info(
+            f"Built diarized transcript with {len(set(word.get('speaker', 0) for word in words))} speakers"
+        )
+        return transcript
+    else:
+        logger.info("Building non-diarized transcript")
+        return alternative.get("transcript", "")
 
 
 @router.post("/deepgram/batch_url_completed", tags=["webhook"])
@@ -50,6 +125,15 @@ async def deepgram_webhook(request: Request):
         batch_id = extra_data.get("batch_id", "unknown")
         url_index = extra_data.get("url_index", 0)
         audio_url = extra_data.get("audio_url", "unknown")
+        summarize = (
+            True if extra_data.get("summarize", "False").lower() == "true" else False
+        )
+        sentiment = (
+            True if extra_data.get("sentiment", "False").lower() == "true" else False
+        )
+        intents = (
+            True if extra_data.get("intents", "False").lower() == "true" else False
+        )
         diarize = (
             True if extra_data.get("diarize", "False").lower() == "true" else False
         )
@@ -65,76 +149,32 @@ async def deepgram_webhook(request: Request):
 
         logger.info(f"Extra data: {extra_data}")
 
-        # Extract transcription results
+        # Extract transcription results and build transcript
         results = webhook_data.get("results", {})
+        try:
+            transcript = build_transcript(results, diarize)
+        except ValueError as e:
+            logger.error(f"Error building transcript: {str(e)}")
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        # Get confidence from the first alternative
         channels = results.get("channels", [])
-
-        if not channels:
-            logger.error("No channels found in webhook data")
-            raise HTTPException(
-                status_code=400, detail="No transcription results found"
-            )
-
-        channel = channels[0]
-        alternatives = channel.get("alternatives", [])
-
-        if not alternatives:
-            logger.error("No alternatives found in channel")
-            raise HTTPException(
-                status_code=400, detail="No transcription alternatives found"
-            )
-
-        alternative = alternatives[0]
-
-        if diarize:
-            logger.info("Building diarized transcript")
-            # Build diarized transcript from words array
-            words = alternative.get("words", [])
-            if not words:
-                logger.warning(
-                    "No words found for diarization, falling back to regular transcript"
-                )
-                transcript = alternative.get("transcript", "")
-                confidence = alternative.get("confidence", 0.0)
-            else:
-                # Build diarized transcript preserving conversation flow
-                diarized_lines = []
-                current_speaker = None
-                current_segment = []
-
-                for word in words:
-                    speaker = word.get("speaker", 0)
-                    word_text = word.get("word", "")
-
-                    # If speaker changes, save current segment and start new one
-                    if current_speaker is not None and speaker != current_speaker:
-                        if current_segment:
-                            speaker_text = " ".join(current_segment)
-                            diarized_lines.append(
-                                f"Speaker {current_speaker}: {speaker_text}"
-                            )
-                        current_segment = []
-
-                    current_speaker = speaker
-                    current_segment.append(word_text)
-
-                # Don't forget the last segment
-                if current_segment:
-                    speaker_text = " ".join(current_segment)
-                    diarized_lines.append(f"Speaker {current_speaker}: {speaker_text}")
-
-                transcript = "\n".join(diarized_lines)
-                confidence = alternative.get("confidence", 0.0)
-
-                logger.info(
-                    f"Built diarized transcript with {len(set(word.get('speaker', 0) for word in words))} speakers"
-                )
-        else:
-            logger.info("Building non-diarized transcript")
-            transcript = alternative.get("transcript", "")
-            confidence = alternative.get("confidence", 0.0)
+        confidence = 0.0
+        if channels and channels[0].get("alternatives"):
+            confidence = channels[0]["alternatives"][0].get("confidence", 0.0)
 
         logger.info(f"Transcript: {transcript[:100]}... (confidence: {confidence})")
+
+        summary = None
+        sentiment = None
+        intents = None
+
+        if summarize:
+            summary = results.get("summary", None)
+        if sentiment:
+            sentiment = results.get("sentiment", None)
+        if intents:
+            intents = results.get("intents", None)
 
         # Create formatted response
         formatted_response = DeepgramBatchURLCompletedWebhookResponse(
@@ -145,6 +185,9 @@ async def deepgram_webhook(request: Request):
             total_urls=total_urls,
             transcript=transcript,
             confidence=confidence,
+            summary=summary,
+            sentiment=sentiment,
+            intents=intents,
             submitted_at=submitted_at,
             completed_at=datetime.now(timezone.utc).isoformat(),
         )
