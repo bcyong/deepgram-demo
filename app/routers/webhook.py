@@ -16,6 +16,7 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     batch_id: str
     request_id: str
     url_index: int
+    audio_url: str
     total_urls: int
     audio_url: str
     transcript: str
@@ -46,10 +47,11 @@ async def deepgram_webhook(request: Request):
         request_id = metadata.get("request_id")
         extra_data = metadata.get("extra", {})
 
-        batch_id = extra_data.get("batch_id") or "unknown"
+        batch_id = extra_data.get("batch_id", "unknown")
         url_index = extra_data.get("url_index", 0)
+        audio_url = extra_data.get("audio_url", "unknown")
         total_urls = extra_data.get("total_urls", 1)
-        submitted_at = extra_data.get("submitted_at") or "unknown"
+        submitted_at = extra_data.get("submitted_at", "unknown")
         use_url_as_filename = extra_data.get("use_url_as_filename", False)
         filename_prefix = extra_data.get("filename_prefix", "")
         user_callback_url = extra_data.get("user_callback_url", "")
@@ -83,16 +85,13 @@ async def deepgram_webhook(request: Request):
             f"Extracted transcript: {transcript[:50]}... (confidence: {confidence})"
         )
 
-        # Get the original audio URL from the webhook
-        audio_url = webhook_data.get("metadata", {}).get("url") or "unknown"
-
         # Create formatted response
         formatted_response = DeepgramBatchURLCompletedWebhookResponse(
             batch_id=batch_id,
             request_id=request_id,
             url_index=url_index,
-            total_urls=total_urls,
             audio_url=audio_url,
+            total_urls=total_urls,
             transcript=transcript,
             confidence=confidence,
             submitted_at=submitted_at,
