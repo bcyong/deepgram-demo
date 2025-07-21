@@ -97,28 +97,37 @@ async def deepgram_webhook(request: Request):
                 transcript = alternative.get("transcript", "")
                 confidence = alternative.get("confidence", 0.0)
             else:
-                # Group words by speaker and build diarized transcript
-                speaker_segments = {}
+                # Build diarized transcript preserving conversation flow
+                diarized_lines = []
+                current_speaker = None
+                current_segment = []
+
                 for word in words:
                     speaker = word.get("speaker", 0)
-                    if speaker not in speaker_segments:
-                        speaker_segments[speaker] = []
-                    speaker_segments[speaker].append(word)
+                    word_text = word.get("word", "")
 
-                # Build diarized transcript
-                diarized_lines = []
-                for speaker in sorted(speaker_segments.keys()):
-                    speaker_words = speaker_segments[speaker]
-                    speaker_text = " ".join(
-                        [word.get("word", "") for word in speaker_words]
-                    )
-                    diarized_lines.append(f"Speaker {speaker}: {speaker_text}")
+                    # If speaker changes, save current segment and start new one
+                    if current_speaker is not None and speaker != current_speaker:
+                        if current_segment:
+                            speaker_text = " ".join(current_segment)
+                            diarized_lines.append(
+                                f"Speaker {current_speaker}: {speaker_text}"
+                            )
+                        current_segment = []
+
+                    current_speaker = speaker
+                    current_segment.append(word_text)
+
+                # Don't forget the last segment
+                if current_segment:
+                    speaker_text = " ".join(current_segment)
+                    diarized_lines.append(f"Speaker {current_speaker}: {speaker_text}")
 
                 transcript = "\n".join(diarized_lines)
                 confidence = alternative.get("confidence", 0.0)
 
                 logger.info(
-                    f"Built diarized transcript with {len(speaker_segments)} speakers"
+                    f"Built diarized transcript with {len(set(word.get('speaker', 0) for word in words))} speakers"
                 )
         else:
             logger.info("Building non-diarized transcript")
