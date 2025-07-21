@@ -9,18 +9,24 @@ from loguru import logger
 
 class TranscribeAudioRequest(BaseModel):
     audio_urls: List[str]
-    storage_location: str
     language: str = "en-US"
     model: str = "nova-3"
+    summarize: bool = True
+    sentiment: bool = True
+    intents: bool = True
+    diarize: bool = True
+    keyterm: List[str] = []
+    keywords: List[str] = []
     use_url_as_filename: bool = False
-    filename_prefix: str = ""
+    filename_prefix: Optional[str] = None
+    storage_location: Optional[str] = None
+    storage_folder_name: Optional[str] = None
     user_callback_url: Optional[str] = None
 
 
 class TranscribeAudioResponse(BaseModel):
     batch_id: str
     audio_urls: List[str]
-    storage_location: str
     status: str
     submitted_at: str
     user_callback_url: str
@@ -55,8 +61,8 @@ async def transcribe_audio_batch(
                 status_code=400, detail="At least one audio URL is required"
             )
 
-        if not request.storage_location:
-            raise HTTPException(status_code=400, detail="Storage location is required")
+        # if not request.storage_location:
+        #     raise HTTPException(status_code=400, detail="Storage location is required")
 
         # Create Deepgram client
         deepgram_client = create_deepgram_client()
@@ -77,6 +83,7 @@ async def transcribe_audio_batch(
                     "audio_url": audio_url,
                     "total_urls": len(request.audio_urls),
                     "storage_location": request.storage_location,
+                    "storage_folder_name": request.storage_folder_name,
                     "use_url_as_filename": request.use_url_as_filename,
                     "filename_prefix": request.filename_prefix,
                     "submitted_at": datetime.now(timezone.utc).isoformat(),
@@ -88,6 +95,12 @@ async def transcribe_audio_batch(
                     "language": request.language,
                     "smart_format": True,
                     "punctuate": True,
+                    "summarize": request.summarize,
+                    "sentiment": request.sentiment,
+                    "intents": request.intents,
+                    "diarize": request.diarize,
+                    "keyterm": request.keyterm,
+                    "keywords": request.keywords,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
                 }
 
