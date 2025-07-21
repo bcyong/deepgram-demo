@@ -1,12 +1,11 @@
 from fastapi import APIRouter, HTTPException, Request
-from locale import str
 from pydantic import BaseModel
 from typing import Dict, List, Optional, Any
 import json
 from datetime import datetime, timezone
-from loguru import logger
 import tempfile
 import os
+from loguru import logger
 from ..utils.google_cloud_storage_client import upload_file
 
 router = APIRouter(prefix="/api/v1/webhook")
@@ -20,7 +19,6 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     url_index: int
     audio_url: str
     total_urls: int
-    audio_url: str
     transcript: str
     confidence: float
     summary: Optional[str] = None
@@ -33,27 +31,27 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
 def build_transcript(results: Dict[str, Any], diarize: bool = False) -> str:
     """
     Build transcript from Deepgram results.
-    
+
     Args:
         results: The results object from Deepgram webhook data
         diarize: Whether to build a diarized transcript
-    
+
     Returns:
         Formatted transcript string
     """
     channels = results.get("channels", [])
-    
+
     if not channels:
         raise ValueError("No channels found in webhook data")
-    
+
     channel = channels[0]
     alternatives = channel.get("alternatives", [])
-    
+
     if not alternatives:
         raise ValueError("No transcription alternatives found")
-    
+
     alternative = alternatives[0]
-    
+
     if diarize:
         logger.info("Building diarized transcript")
         # Build diarized transcript from words array
@@ -63,33 +61,31 @@ def build_transcript(results: Dict[str, Any], diarize: bool = False) -> str:
                 "No words found for diarization, falling back to regular transcript"
             )
             return alternative.get("transcript", "")
-        
+
         # Build diarized transcript preserving conversation flow
         diarized_lines = []
         current_speaker = None
         current_segment = []
-        
+
         for word in words:
             speaker = word.get("speaker", 0)
             word_text = word.get("word", "")
-            
+
             # If speaker changes, save current segment and start new one
             if current_speaker is not None and speaker != current_speaker:
                 if current_segment:
                     speaker_text = " ".join(current_segment)
-                    diarized_lines.append(
-                        f"Speaker {current_speaker}: {speaker_text}"
-                    )
+                    diarized_lines.append(f"Speaker {current_speaker}: {speaker_text}")
                 current_segment = []
-            
+
             current_speaker = speaker
             current_segment.append(word_text)
-        
+
         # Don't forget the last segment
         if current_segment:
             speaker_text = " ".join(current_segment)
             diarized_lines.append(f"Speaker {current_speaker}: {speaker_text}")
-        
+
         transcript = "\n".join(diarized_lines)
         logger.info(
             f"Built diarized transcript with {len(set(word.get('speaker', 0) for word in words))} speakers"
@@ -156,7 +152,7 @@ async def deepgram_webhook(request: Request):
         except ValueError as e:
             logger.error(f"Error building transcript: {str(e)}")
             raise HTTPException(status_code=400, detail=str(e))
-        
+
         # Get confidence from the first alternative
         channels = results.get("channels", [])
         confidence = 0.0
