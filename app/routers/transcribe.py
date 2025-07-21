@@ -81,6 +81,7 @@ async def transcribe_audio_batch(
                     "batch_id": batch_id,
                     "url_index": i,
                     "audio_url": audio_url,
+                    "diarize": request.diarize,
                     "total_urls": len(request.audio_urls),
                     "storage_location": request.storage_location,
                     "storage_folder_name": request.storage_folder_name,

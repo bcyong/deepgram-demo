@@ -50,6 +50,9 @@ async def deepgram_webhook(request: Request):
         batch_id = extra_data.get("batch_id", "unknown")
         url_index = extra_data.get("url_index", 0)
         audio_url = extra_data.get("audio_url", "unknown")
+        diarize = (
+            True if extra_data.get("diarize", "False").lower() == "true" else False
+        )
         total_urls = extra_data.get("total_urls", 1)
         submitted_at = extra_data.get("submitted_at", "unknown")
         use_url_as_filename = (
@@ -82,12 +85,47 @@ async def deepgram_webhook(request: Request):
             )
 
         alternative = alternatives[0]
-        transcript = alternative.get("transcript", "")
-        confidence = alternative.get("confidence", 0.0)
 
-        logger.info(
-            f"Extracted transcript: {transcript[:50]}... (confidence: {confidence})"
-        )
+        if diarize:
+            logger.info("Building diarized transcript")
+            # Build diarized transcript from words array
+            words = alternative.get("words", [])
+            if not words:
+                logger.warning(
+                    "No words found for diarization, falling back to regular transcript"
+                )
+                transcript = alternative.get("transcript", "")
+                confidence = alternative.get("confidence", 0.0)
+            else:
+                # Group words by speaker and build diarized transcript
+                speaker_segments = {}
+                for word in words:
+                    speaker = word.get("speaker", 0)
+                    if speaker not in speaker_segments:
+                        speaker_segments[speaker] = []
+                    speaker_segments[speaker].append(word)
+
+                # Build diarized transcript
+                diarized_lines = []
+                for speaker in sorted(speaker_segments.keys()):
+                    speaker_words = speaker_segments[speaker]
+                    speaker_text = " ".join(
+                        [word.get("word", "") for word in speaker_words]
+                    )
+                    diarized_lines.append(f"Speaker {speaker}: {speaker_text}")
+
+                transcript = "\n".join(diarized_lines)
+                confidence = alternative.get("confidence", 0.0)
+
+                logger.info(
+                    f"Built diarized transcript with {len(speaker_segments)} speakers"
+                )
+        else:
+            logger.info("Building non-diarized transcript")
+            transcript = alternative.get("transcript", "")
+            confidence = alternative.get("confidence", 0.0)
+
+        logger.info(f"Transcript: {transcript[:100]}... (confidence: {confidence})")
 
         # Create formatted response
         formatted_response = DeepgramBatchURLCompletedWebhookResponse(
