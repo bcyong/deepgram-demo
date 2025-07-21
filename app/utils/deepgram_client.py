@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, List, Any
 from dotenv import load_dotenv
 from deepgram import DeepgramClient, PrerecordedOptions, FileSource
 from loguru import logger
@@ -36,6 +36,12 @@ class DeepgramWrapper:
         model: str = "nova-3",
         smart_format: bool = True,
         punctuate: bool = True,
+        summarize: bool = True,
+        sentiment: bool = True,
+        intents: bool = True,
+        diarize: bool = True,
+        keyterm: List[str] = [],
+        keywords: List[str] = [],
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -55,10 +61,16 @@ class DeepgramWrapper:
         try:
             # Build options for Deepgram API
             options = PrerecordedOptions(
-                model=model,
                 language=language,
+                model=model,
                 smart_format=smart_format,
                 punctuate=punctuate,
+                summarize=summarize,
+                sentiment=sentiment,
+                intents=intents,
+                diarize=diarize,
+                keyterm=keyterm,
+                keywords=keywords,
                 **kwargs,
             )
 
