@@ -52,7 +52,11 @@ async def deepgram_webhook(request: Request):
         audio_url = extra_data.get("audio_url", "unknown")
         total_urls = extra_data.get("total_urls", 1)
         submitted_at = extra_data.get("submitted_at", "unknown")
-        use_url_as_filename = extra_data.get("use_url_as_filename", False)
+        use_url_as_filename = (
+            True
+            if extra_data.get("use_url_as_filename", "False").lower() == "true"
+            else False
+        )
         filename_prefix = extra_data.get("filename_prefix", "")
         user_callback_url = extra_data.get("user_callback_url", "")
 
