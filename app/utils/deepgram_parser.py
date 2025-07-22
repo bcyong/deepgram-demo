@@ -87,8 +87,9 @@ def extract_summary(results_data: Dict[str, Any], summarize: str) -> str:
         Summary as a string, or empty string if not found
     """
     summary = ""
-    if summarize == "v2":
+    if summarize == "v2" or summarize.lower() == "true":
         summary_dict = results_data.get("summary", None)
+        logger.info(f"Summary dict: {summary_dict}")
         if summary_dict:
             if summary_dict.get("success", False):
                 summary = summary_dict.get("short", "")

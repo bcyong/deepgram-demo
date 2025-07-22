@@ -61,7 +61,7 @@ async def deepgram_webhook(request: Request):
         batch_id = extra_data.get("batch_id", "unknown")
         url_index = extra_data.get("url_index", 0)
         audio_url = extra_data.get("audio_url", "unknown")
-        summarize = extra_data.get("summarize", "v2")
+        summarize = extra_data.get("summarize", "false")
         sentiment = (
             True if extra_data.get("sentiment", "False").lower() == "true" else False
         )
