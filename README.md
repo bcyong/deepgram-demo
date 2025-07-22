@@ -1,8 +1,8 @@
 # Deepgram Demo Project: Transcription & Audio Intelligence Platform
 
-This project demonstrates the use of Deepgram’s speech recognition and Audio Intelligence capabilities in a stateless, containerized API service. It was developed as part of the final round interview for the Solutions Architect role at Deepgram.
+This project demonstrates the use of Deepgram’s speech recognition and Audio Intelligence capabilities in a stateless, containerized API service.
 
-The system is designed to simulate a realistic customer implementation scenario (e.g., DataVoice Inc.) that supports asynchronous batch transcription with webhook-based results delivery, rich audio intelligence analysis, custom keyword handling, and validation tooling—all optimized for minimal workflow disruption and extensibility.
+The system is designed to simulate a realistic customer implementation scenario that supports asynchronous batch transcription with webhook-based results delivery, rich audio intelligence analysis, custom keyword handling, and validation tooling - all optimized for minimal workflow disruption and extensibility.
 
 ---
 
