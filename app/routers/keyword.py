@@ -25,7 +25,7 @@ async def add_keyword(keyword_request: KeywordAddRequest):
 @router.delete("/delete", tags=["keyword"])
 async def delete_keyword(keyword_request: KeywordDeleteRequest):
     logger.info(f"Deleting keywords: {keyword_request.keywords}")
-    await keyword_manager.delete_keywords(keyword_request.keywords.keys())
+    await keyword_manager.delete_keywords(keyword_request.keywords)
     return {"message": f"Keywords {keyword_request.keywords} deleted"}
 
 
