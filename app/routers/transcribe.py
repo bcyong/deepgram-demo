@@ -78,12 +78,18 @@ async def transcribe_audio_batch(
         # Build full list of keyterms or keywords depending on model
         if request.model in NOVA_3_MODELS:
             global_keyterms = await get_all_keyterms()
+            logger.info(f"Global keyterms: {global_keyterms}")
+            logger.info(f"Request keyterms: {request.keyterm}")
             keyterms = global_keyterms + request.keyterm
+            logger.info(f"Keyterms: {keyterms}")
             keywords = []
         else:
             # For other models: merge list of "keyword:int" strings with dict of "key:int"
             global_keywords = await get_all_keywords()
+            logger.info(f"Global keywords: {global_keywords}")
+            logger.info(f"Request keywords: {request.keywords}")
             keywords = global_keywords + request.keywords
+            logger.info(f"Keywords: {keywords}")
             keyterms = []
 
         # Submit each URL for transcription with extra data
