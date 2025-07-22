@@ -179,7 +179,6 @@ def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float, list[fl
     if sentiments_data and "segments" in sentiments_data:
         for segment in sentiments_data["segments"]:
             if "sentiment_score" in segment:
-                logger.info(f"Segment sentiment score: {segment['sentiment_score']}")
                 if abs(segment["sentiment_score"]) > SENTIMENT_EXTREME_THRESHOLD:
                     extreme_sentiment_scores.append(segment["sentiment_score"])
 
