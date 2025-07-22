@@ -1,9 +1,9 @@
 from typing import Dict, List, Any
 from loguru import logger
 
-INTENT_CONFIDENCE_THRESHOLD = 0.8
+INTENT_CONFIDENCE_THRESHOLD = 0.1
 SENTIMENT_CONFIDENCE_THRESHOLD = 0.8
-TOPIC_CONFIDENCE_THRESHOLD = 0.8
+TOPIC_CONFIDENCE_THRESHOLD = 0.1
 
 
 def format_timestamp(seconds: float) -> str:
