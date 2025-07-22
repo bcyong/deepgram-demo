@@ -34,28 +34,33 @@ The system is designed to simulate a realistic customer implementation scenario 
 deepgram-demo/
 │
 ├── app/                        # Main application package
-│   ├── main.py                 # FastAPI app factory
+│   ├── __init__.py            # Package initialization
+│   ├── main.py                # FastAPI app factory
+│   ├── dependencies.py        # Dependency injection setup
 │   ├── routers/               # Modular API route definitions
+│   │   ├── __init__.py        # Router package initialization
 │   │   ├── audit.py           # WER audit endpoints
 │   │   ├── health.py          # Liveness/readiness checks
 │   │   ├── keyword.py         # API for managing boosted keywords
-│   │   ├── keyterm.py         # API for managing keyterms (Nova-compatible)
+│   │   ├── keyterm.py         # API for managing keyterms (Nova 3-compatible)
 │   │   ├── transcribe.py      # Batch transcription submission
 │   │   └── webhook.py         # Deepgram callback handler
 │   ├── utils/                 # Core logic utilities
-│   │   ├── deepgram_client.py         # Wrapper around Deepgram SDK
-│   │   ├── deepgram_parser.py         # Summary, sentiment, intent, diarization logic
-│   │   ├── storage_client.py          # GCS integration
-│   │   ├── keyword_manager.py         # Keyword Redis storage
-│   │   ├── keyterm_manager.py         # Keyterm Redis storage
-│   │   └── wer.py                     # WER calculation via `jiwer`
-│   └── models/               # Pydantic request/response models
+│   │   ├── __init__.py        # Utils package initialization
+│   │   ├── deepgram_client.py # Wrapper around Deepgram SDK
+│   │   ├── deepgram_parser.py # Summary, sentiment, intent, diarization logic
+│   │   ├── google_cloud_storage_client.py # GCS integration
+│   │   ├── keyterm_manager.py # Keyterm Redis storage
+│   │   ├── storage_client.py  # Redis client wrapper
+│   │   └── wer_calculator.py  # WER calculation via `jiwer`
+│   └── internal/              # Internal application modules
+│       └── __init__.py        # Internal package initialization
 │
 ├── pyproject.toml            # Dependency and tool declarations
+├── uv.lock                   # Lock file for dependency versions
 ├── Dockerfile                # Container build instructions
 ├── .env.template             # Example environment config
-├── README.md                 # You are here
-└── requirements.txt          # (optional) legacy pip support
+└── README.md                 # You are here
 ```
 ---
 
