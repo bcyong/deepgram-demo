@@ -113,11 +113,13 @@ async def deepgram_webhook(request: Request):
 
         logger.info(f"Webhook data: {webhook_data}")
 
-        # Extract extra data from the webhook
+        # Extract data from the webhook
         metadata = webhook_data.get("metadata", {})
         request_id = metadata.get("request_id")
-        extra_data = metadata.get("extra", {})
+        results_data = webhook_data.get("results", {})
 
+        # Extract extra data from the metadata
+        extra_data = metadata.get("extra", {})
         batch_id = extra_data.get("batch_id", "unknown")
         url_index = extra_data.get("url_index", 0)
         audio_url = extra_data.get("audio_url", "unknown")
@@ -125,7 +127,7 @@ async def deepgram_webhook(request: Request):
         sentiment = (
             True if extra_data.get("sentiment", "False").lower() == "true" else False
         )
-        intents = (
+        intents_enabled = (
             True if extra_data.get("intents", "False").lower() == "true" else False
         )
         diarize = (
@@ -159,16 +161,35 @@ async def deepgram_webhook(request: Request):
 
         logger.info(f"Transcript: {transcript[:100]}... (confidence: {confidence})")
 
-        summary = None
-        sentiment = None
-        intents = None
-
+        # Extract summary from the results
+        summary = ""
         if summarize == "v2":
-            summary = results.get("summary", None)
+            summary_dict = results_data.get("summary", None)
+            if summary_dict:
+                if summary_dict.get("success", False):
+                    summary = summary_dict.get("short", None)
+
+        logger.info(f"Summary: {summary}")
+
+        # Extract sentiment and intents from the results
+        sentiment = ""
+
         if sentiment:
             sentiment = results.get("sentiment", None)
-        if intents:
-            intents = results.get("intents", None)
+
+        # Extract intents from the results
+        intents = []
+        if intents_enabled:
+            intents_data = results_data.get("intents", {})
+            if intents_data and "segments" in intents_data:
+                for segment in intents_data["segments"]:
+                    if "intents" in segment:
+                        for intent_obj in segment["intents"]:
+                            intent_name = intent_obj.get("intent")
+                            if intent_name:
+                                intents.append(intent_name)
+
+        logger.info(f"Intents: {intents}")
 
         # Create formatted response
         formatted_response = DeepgramBatchURLCompletedWebhookResponse(
