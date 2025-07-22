@@ -2,7 +2,7 @@ from typing import Dict, List, Any
 from loguru import logger
 
 INTENT_CONFIDENCE_THRESHOLD = 0.1
-SENTIMENT_CONFIDENCE_THRESHOLD = 0.8
+SENTIMENT_EXTREME_THRESHOLD = 0.7
 TOPIC_CONFIDENCE_THRESHOLD = 0.1
 
 
@@ -156,7 +156,7 @@ def extract_intents(results_data: Dict[str, Any]) -> List[str]:
     return list(intents)
 
 
-def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
+def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float, list[float]]:
     """
     Extract sentiment from Deepgram results.
 
@@ -164,10 +164,11 @@ def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
         results_data: The results object from Deepgram webhook data
 
     Returns:
-        Tuple of (sentiment as a string, sentiment score as a float between -1 and 1)
+        Tuple of (sentiment as a string, sentiment score as a float between -1 and 1, list of extreme sentiment scores for each segment)
     """
     sentiment = ""
     sentiment_score = 0.0
+    extreme_sentiment_scores = []
     sentiments_data = results_data.get("sentiments", {})
     average_sentiment = sentiments_data.get("average", {})
 
@@ -175,7 +176,14 @@ def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
         sentiment = average_sentiment.get("sentiment", "")
         sentiment_score = average_sentiment.get("sentiment_score", 0.0)
 
-    return sentiment, sentiment_score
+    if sentiments_data and "segments" in sentiments_data:
+        for segment in sentiments_data["segments"]:
+            if "sentiment_score" in segment:
+                logger.info(f"Segment sentiment score: {segment['sentiment_score']}")
+                if abs(segment["sentiment_score"]) > SENTIMENT_EXTREME_THRESHOLD:
+                    extreme_sentiment_scores.append(segment["sentiment_score"])
+
+    return sentiment, sentiment_score, extreme_sentiment_scores
 
 
 def extract_topics(results_data: Dict[str, Any]) -> List[str]:
