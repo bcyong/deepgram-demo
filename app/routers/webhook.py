@@ -32,6 +32,7 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     summary: Optional[str] = None
     sentiment: Optional[str] = None
     sentiment_score: Optional[float] = None
+    extreme_sentiment_scores: Optional[List[float]] = None
     intents: Optional[List[str]] = None
     submitted_at: str
     completed_at: str
@@ -109,11 +110,16 @@ async def deepgram_webhook(request: Request):
 
         # Extract sentiment from the results
         if sentiment_enabled:
-            sentiment, sentiment_score = extract_sentiment(results_data)
+            sentiment, sentiment_score, extreme_sentiment_scores = extract_sentiment(
+                results_data
+            )
         else:
             sentiment = ""
             sentiment_score = 0.0
-        logger.info(f"Sentiment: {sentiment} (score: {sentiment_score})")
+            extreme_sentiment_scores = []
+        logger.info(
+            f"Sentiment: {sentiment} (score: {sentiment_score}, extreme scores: {extreme_sentiment_scores})"
+        )
 
         # Extract intents from the results
         if intents_enabled:
@@ -141,6 +147,7 @@ async def deepgram_webhook(request: Request):
             summary=summary,
             sentiment=sentiment,
             sentiment_score=sentiment_score,
+            extreme_sentiment_scores=extreme_sentiment_scores,
             intents=intents,
             submitted_at=submitted_at,
             completed_at=datetime.now(timezone.utc).isoformat(),
