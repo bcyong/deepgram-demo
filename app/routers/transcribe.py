@@ -11,7 +11,7 @@ class TranscribeAudioRequest(BaseModel):
     audio_urls: List[str]
     language: str = "en-US"
     model: str = "nova-3"
-    summarize: bool = True
+    summarize: str = "v2"
     sentiment: bool = True
     intents: bool = True
     diarize: bool = True

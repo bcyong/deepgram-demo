@@ -36,7 +36,7 @@ class DeepgramWrapper:
         model: str = "nova-3",
         smart_format: bool = True,
         punctuate: bool = True,
-        summarize: bool = True,
+        summarize: str = "v2",
         sentiment: bool = True,
         intents: bool = True,
         diarize: bool = True,
