@@ -2,6 +2,23 @@ from typing import Dict, List, Any
 from loguru import logger
 
 
+def format_timestamp(seconds: float) -> str:
+    """
+    Convert seconds to [hh:mm:ss] format.
+
+    Args:
+        seconds: Time in seconds
+
+    Returns:
+        Formatted timestamp string
+    """
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+
+    return f"[{hours:02d}:{minutes:02d}:{secs:02d}]"
+
+
 def build_transcript(
     results: Dict[str, Any], diarize: bool = False
 ) -> tuple[str, float]:
@@ -45,17 +62,27 @@ def build_transcript(
         diarized_lines = []
         current_speaker = None
         current_segment = []
+        current_start_time = None
 
         for word in words:
             speaker = word.get("speaker", 0)
             word_text = word.get("word", "")
+            start_time = word.get("start", 0)
 
             # If speaker changes, save current segment and start new one
             if current_speaker is not None and speaker != current_speaker:
                 if current_segment:
                     speaker_text = " ".join(current_segment)
-                    diarized_lines.append(f"Speaker {current_speaker}: {speaker_text}")
+                    timestamp = format_timestamp(current_start_time)
+                    diarized_lines.append(
+                        f"Speaker {current_speaker} {timestamp}: {speaker_text}"
+                    )
                 current_segment = []
+                current_start_time = start_time
+
+            # Set start time for new speaker or first word
+            if current_speaker is None:
+                current_start_time = start_time
 
             current_speaker = speaker
             current_segment.append(word_text)
@@ -63,7 +90,10 @@ def build_transcript(
         # Don't forget the last segment
         if current_segment:
             speaker_text = " ".join(current_segment)
-            diarized_lines.append(f"Speaker {current_speaker}: {speaker_text}")
+            timestamp = format_timestamp(current_start_time)
+            diarized_lines.append(
+                f"Speaker {current_speaker} {timestamp}: {speaker_text}"
+            )
 
         transcript = "\n".join(diarized_lines)
         logger.info(
