@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Deepgram Demo Interface</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; }
+    label { display: block; margin-top: 1rem; }
+    textarea, input[type="text"] { width: 100%; padding: 0.5rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Deepgram Transcription Demo</h1>
+
+  <form id="transcribe-form">
+    <label>Audio URL:
+      <input type="text" id="audio-url" placeholder="https://example.com/audio.mp3" required />
+    </label>
+
+    <label>Keyterms (comma-separated):
+      <input type="text" id="keyterms" placeholder="custom,terms,here" />
+    </label>
+
+    <label>Enable Audio Intelligence:
+      <input type="checkbox" id="summarize" checked /> Summarize
+      <input type="checkbox" id="sentiment" checked /> Sentiment
+      <input type="checkbox" id="intents" checked /> Intents
+      <input type="checkbox" id="topics" checked /> Topics
+      <input type="checkbox" id="diarize" checked /> Diarize
+    </label>
+
+    <button type="submit">Submit for Transcription</button>
+  </form>
+
+  <h2>Response</h2>
+  <pre id="output">Waiting for submission...</pre>
+
+  <script>
+    const form = document.getElementById('transcribe-form');
+    const output = document.getElementById('output');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const audioUrl = document.getElementById('audio-url').value;
+      const keyterms = document.getElementById('keyterms').value.split(',').map(s => s.trim()).filter(Boolean);
+
+      const payload = {
+        audio_urls: [audioUrl],
+        summarize: "v2",
+        sentiment: document.getElementById('sentiment').checked,
+        intents: document.getElementById('intents').checked,
+        topics: document.getElementById('topics').checked,
+        diarize: document.getElementById('diarize').checked,
+        keyterms: keyterms,
+        use_url_as_filename: true,
+      };
+
+      output.textContent = "Submitting...";
+      try {
+        const res = await fetch('/api/v1/transcribe/batch-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
