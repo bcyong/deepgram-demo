@@ -34,6 +34,7 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     sentiment_score: Optional[float] = None
     extreme_sentiment_scores: Optional[List[float]] = None
     intents: Optional[List[str]] = None
+    topics: Optional[List[str]] = None
     submitted_at: str
     completed_at: str
 
@@ -149,6 +150,7 @@ async def deepgram_webhook(request: Request):
             sentiment_score=sentiment_score,
             extreme_sentiment_scores=extreme_sentiment_scores,
             intents=intents,
+            topics=topics,
             submitted_at=submitted_at,
             completed_at=datetime.now(timezone.utc).isoformat(),
         )
