@@ -33,7 +33,7 @@ The system is designed to simulate a realistic customer implementation scenario 
 ```text
 deepgram-demo/
 │
-├── app/                        # Main application package
+├── app/                       # Main application package
 │   ├── __init__.py            # Package initialization
 │   ├── main.py                # FastAPI app factory
 │   ├── dependencies.py        # Dependency injection setup
