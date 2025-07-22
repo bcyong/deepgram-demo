@@ -149,4 +149,9 @@ def build_filename(
     else:
         filename = f"{batch_id}_url_{url_index}.json"
 
+    if storage_folder_name:
+        filename = storage_folder_name + "/" + filename
+    else:
+        filename = batch_id + "/" + filename
+
     return filename
