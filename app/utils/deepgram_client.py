@@ -76,7 +76,7 @@ class DeepgramWrapper:
                 **kwargs,
             )
 
-            logger.info(f"Options: {options}")
+            logger.info(f"Deepgram Request Options: {options}")
 
             # Use the REST API for transcription
             response = self.client.listen.rest.v("1").transcribe_url(
