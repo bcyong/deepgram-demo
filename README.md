@@ -19,7 +19,7 @@ The system is designed to simulate a realistic customer implementation scenario 
 - **WER audit endpoints** for validating Deepgram output against reference transcripts
 - **Metadata and user callback support**: maintain stateless job tracking across webhook flow
 
-### ⚙️ Architecture & Ops
+### Architecture & Ops
 - **FastAPI backend**, with typed request/response models and built-in interactive API docs
 - **Containerized (Docker)** and designed for **stateless, horizontally scalable deployment**
 - Uses **Redis** for dynamic keyword/keyterm storage and potential queueing
