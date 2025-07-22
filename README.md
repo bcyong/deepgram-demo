@@ -56,13 +56,13 @@ deepgram-demo/
 ├── .env.template             # Example environment config
 ├── README.md                 # You are here
 └── requirements.txt          # (optional) legacy pip support
-
+```
 ---
 
 ## Key Endpoints
 
 | Method | Route                                                   | Description                                                      |
-|--------|----------------------------------------------------------|------------------------------------------------------------------|
+|--------|---------------------------------------------------------|------------------------------------------------------------------|
 | POST   | `/api/v1/transcribe/batch-url`                          | Submit one or more audio URLs for Deepgram transcription         |
 | POST   | `/api/v1/webhook/deepgram/batch_url_completed`          | Deepgram callback receiver for transcription results             |
 | POST   | `/api/v1/audit/text`                                    | Compare reference and hypothesis transcripts for WER             |
