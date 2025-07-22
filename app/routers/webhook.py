@@ -12,6 +12,7 @@ from ..utils.deepgram_parser import (
     extract_summary,
     extract_intents,
     extract_sentiment,
+    extract_topics,
     build_filename,
 )
 
@@ -70,6 +71,9 @@ async def deepgram_webhook(request: Request):
         intents_enabled = (
             True if extra_data.get("intents", "False").lower() == "true" else False
         )
+        topics_enabled = (
+            True if extra_data.get("topics", "False").lower() == "true" else False
+        )
         diarize = (
             True if extra_data.get("diarize", "False").lower() == "true" else False
         )
@@ -117,6 +121,13 @@ async def deepgram_webhook(request: Request):
         else:
             intents = []
         logger.info(f"Intents: {intents}")
+
+        # Extract topics from the results
+        if topics_enabled:
+            topics = extract_topics(results_data)
+        else:
+            topics = []
+        logger.info(f"Topics: {topics}")
 
         # Create formatted response
         formatted_response = DeepgramBatchURLCompletedWebhookResponse(

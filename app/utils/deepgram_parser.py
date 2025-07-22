@@ -1,6 +1,10 @@
 from typing import Dict, List, Any
 from loguru import logger
 
+INTENT_CONFIDENCE_THRESHOLD = 0.8
+SENTIMENT_CONFIDENCE_THRESHOLD = 0.8
+TOPIC_CONFIDENCE_THRESHOLD = 0.8
+
 
 def format_timestamp(seconds: float) -> str:
     """
@@ -137,18 +141,18 @@ def extract_intents(results_data: Dict[str, Any]) -> List[str]:
     Returns:
         List of intent names as strings
     """
-    intents = []
+    intents = set()
     intents_data = results_data.get("intents", {})
-
     if intents_data and "segments" in intents_data:
         for segment in intents_data["segments"]:
             if "intents" in segment:
                 for intent_obj in segment["intents"]:
                     intent_name = intent_obj.get("intent")
-                    if intent_name:
-                        intents.append(intent_name)
+                    confidence = intent_obj.get("confidence_score", 0.0)
+                    if intent_name and confidence > INTENT_CONFIDENCE_THRESHOLD:
+                        intents.add(intent_name)
 
-    return intents
+    return list(intents)
 
 
 def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
@@ -171,6 +175,30 @@ def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
         sentiment_score = average_sentiment.get("sentiment_score", 0.0)
 
     return sentiment, sentiment_score
+
+
+def extract_topics(results_data: Dict[str, Any]) -> List[str]:
+    """
+    Extract topics from Deepgram results.
+
+    Args:
+        results_data: The results object from Deepgram webhook data
+
+    Returns:
+        List of topics as strings
+    """
+    topics = set()
+    topics_data = results_data.get("topics", {})
+    if topics_data and "segments" in topics_data:
+        for segment in topics_data["segments"]:
+            if "topics" in segment:
+                for topic_obj in segment["topics"]:
+                    topic_name = topic_obj.get("topic")
+                    confidence = topic_obj.get("confidence_score", 0.0)
+                    if topic_name and confidence > TOPIC_CONFIDENCE_THRESHOLD:
+                        topics.add(topic_name)
+
+    return list(topics)
 
 
 def build_filename(

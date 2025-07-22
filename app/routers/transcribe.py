@@ -14,6 +14,7 @@ class TranscribeAudioRequest(BaseModel):
     summarize: str = "v2"
     sentiment: bool = True
     intents: bool = True
+    topics: bool = True
     diarize: bool = True
     keyterm: List[str] = []
     keywords: List[str] = []
@@ -81,6 +82,7 @@ async def transcribe_audio_batch(
                     "summarize": request.summarize,
                     "sentiment": request.sentiment,
                     "intents": request.intents,
+                    "topics": request.topics,
                     "diarize": request.diarize,
                     "total_urls": len(request.audio_urls),
                     "storage_bucket_name": request.storage_bucket_name,
@@ -99,6 +101,7 @@ async def transcribe_audio_batch(
                     "summarize": request.summarize,
                     "sentiment": request.sentiment,
                     "intents": request.intents,
+                    "topics": request.topics,
                     "diarize": request.diarize,
                     "keyterm": request.keyterm,
                     "keywords": request.keywords,
