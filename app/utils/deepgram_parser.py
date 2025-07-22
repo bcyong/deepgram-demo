@@ -159,18 +159,16 @@ def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
         results_data: The results object from Deepgram webhook data
 
     Returns:
-        Sentiment as a string, or empty string if not found
+        Tuple of (sentiment as a string, sentiment score as a float between -1 and 1)
     """
     sentiment = ""
+    sentiment_score = 0.0
     sentiments_data = results_data.get("sentiments", {})
+    average_sentiment = sentiments_data.get("average", {})
 
-    if (
-        sentiments_data
-        and "average" in sentiments_data
-        and "sentiment" in sentiments_data["average"]
-    ):
-        sentiment = sentiments_data["average"]["sentiment"]
-        sentiment_score = sentiments_data["average"]["score"]
+    if average_sentiment:
+        sentiment = average_sentiment.get("sentiment", "")
+        sentiment_score = average_sentiment.get("sentiment_score", 0.0)
 
     return sentiment, sentiment_score
 
