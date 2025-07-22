@@ -19,7 +19,7 @@ class TranscribeAudioRequest(BaseModel):
     keywords: List[str] = []
     use_url_as_filename: bool = False
     filename_prefix: Optional[str] = ""
-    storage_location: Optional[str] = ""
+    storage_bucket_name: Optional[str] = ""
     storage_folder_name: Optional[str] = ""
     user_callback_url: Optional[str] = ""
 
@@ -61,9 +61,6 @@ async def transcribe_audio_batch(
                 status_code=400, detail="At least one audio URL is required"
             )
 
-        # if not request.storage_location:
-        #     raise HTTPException(status_code=400, detail="Storage location is required")
-
         # Create Deepgram client
         deepgram_client = create_deepgram_client()
 
@@ -86,7 +83,7 @@ async def transcribe_audio_batch(
                     "intents": request.intents,
                     "diarize": request.diarize,
                     "total_urls": len(request.audio_urls),
-                    "storage_location": request.storage_location,
+                    "storage_bucket_name": request.storage_bucket_name,
                     "storage_folder_name": request.storage_folder_name,
                     "use_url_as_filename": request.use_url_as_filename,
                     "filename_prefix": request.filename_prefix,
@@ -128,7 +125,8 @@ async def transcribe_audio_batch(
         return TranscribeAudioResponse(
             batch_id=batch_id,
             audio_urls=request.audio_urls,
-            storage_location=request.storage_location,
+            storage_bucket_name=request.storage_bucket_name,
+            storage_folder_name=request.storage_folder_name,
             status="submitted",
             submitted_at=datetime.now(timezone.utc).isoformat(),
             user_callback_url=request.user_callback_url or "",

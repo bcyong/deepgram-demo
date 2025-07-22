@@ -176,6 +176,7 @@ def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
 def build_filename(
     use_url_as_filename: bool,
     filename_prefix: str,
+    storage_bucket_name: str,
     storage_folder_name: str,
     audio_url: str,
     batch_id: str,
@@ -195,6 +196,12 @@ def build_filename(
     Returns:
         Filename as a string
     """
+
+    if storage_bucket_name != "":
+        logger.warning(
+            "Storage bucket name is not empty. This is not supported yet. Defaulting to 'yonger-deepgram-demo'"
+        )
+
     if use_url_as_filename:
         filename = f"{audio_url.split('/')[-1]}.json"
     elif filename_prefix:
