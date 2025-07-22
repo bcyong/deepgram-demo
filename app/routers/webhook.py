@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 import tempfile
 import os
+import httpx
 from loguru import logger
 from ..utils.google_cloud_storage_client import upload_file
 from ..utils.deepgram_parser import (
@@ -37,6 +38,20 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     topics: Optional[List[str]] = None
     submitted_at: str
     completed_at: str
+
+
+def call_user_callback(user_callback_url: str, data: Dict) -> bool:
+    """
+    Helper function to call a user-provided callback URL with transcription data.
+    """
+    try:
+        response = httpx.post(user_callback_url, json=data)
+        response.raise_for_status()
+        logger.info(f"Successfully called user callback URL: {user_callback_url}")
+        return True
+    except httpx.RequestError as e:
+        logger.error(f"Failed to call user callback URL {user_callback_url}: {e}")
+        return False
 
 
 @router.post("/deepgram/batch_url_completed", tags=["webhook"])
@@ -136,6 +151,8 @@ async def deepgram_webhook(request: Request):
             topics = []
         logger.info(f"Topics: {topics}")
 
+        completed_at = datetime.now(timezone.utc).isoformat()
+
         # Create formatted response
         formatted_response = DeepgramBatchURLCompletedWebhookResponse(
             batch_id=batch_id,
@@ -152,7 +169,7 @@ async def deepgram_webhook(request: Request):
             intents=intents,
             topics=topics,
             submitted_at=submitted_at,
-            completed_at=datetime.now(timezone.utc).isoformat(),
+            completed_at=completed_at,
         )
 
         # Convert to JSON for file output
@@ -207,7 +224,24 @@ async def deepgram_webhook(request: Request):
             f"Successfully processed webhook for request_id={request_id}, filename={filename}"
         )
 
-        # TODO: Call user callback URL
+        # Call user callback if provided
+        if user_callback_url != "":
+            callback_data = {
+                "audio_url": audio_url,
+                "batch_id": batch_id,
+                "batch_index": url_index,
+                "deepgram_request_id": request_id,
+                "output_file_location": f"gs://yonger-deepgram-demo/transcriptions/{filename}",
+                "summary": summary,
+                "sentiment": sentiment,
+                "sentiment_score": sentiment_score,
+                "extreme_sentiment_scores": extreme_sentiment_scores,
+                "intents": intents,
+                "topics": topics,
+                "submitted_at": submitted_at,
+                "completed_at": completed_at,
+            }
+            call_user_callback(user_callback_url, callback_data)
 
         return {
             "status": "success",
