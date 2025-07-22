@@ -149,6 +149,7 @@ def extract_intents(results_data: Dict[str, Any]) -> List[str]:
                 for intent_obj in segment["intents"]:
                     intent_name = intent_obj.get("intent")
                     confidence = intent_obj.get("confidence_score", 0.0)
+                    logger.info(f"Intent: {intent_name} (confidence: {confidence})")
                     if intent_name and confidence > INTENT_CONFIDENCE_THRESHOLD:
                         intents.add(intent_name)
 
@@ -195,6 +196,7 @@ def extract_topics(results_data: Dict[str, Any]) -> List[str]:
                 for topic_obj in segment["topics"]:
                     topic_name = topic_obj.get("topic")
                     confidence = topic_obj.get("confidence_score", 0.0)
+                    logger.info(f"Topic: {topic_name} (confidence: {confidence})")
                     if topic_name and confidence > TOPIC_CONFIDENCE_THRESHOLD:
                         topics.add(topic_name)
 
