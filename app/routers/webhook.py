@@ -101,9 +101,8 @@ async def deepgram_webhook(request: Request):
             summary = ""
         logger.info(f"Summary: {summary}")
 
-        # Extract sentiment and intents from the results
-        # sentiment = ""
-
+        # Extract sentiment from the results
+        sentiment = ""
         # if sentiment:
         #     sentiment = results_data.get("sentiment", None)
 
