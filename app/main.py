@@ -21,3 +21,10 @@ async def get():
     return HTMLResponse(
         content=open("app/templates/index.html").read(), media_type="text/html"
     )
+
+
+@app.get("/audit", response_class=HTMLResponse)
+async def get_audit():
+    return HTMLResponse(
+        content=open("app/templates/audit.html").read(), media_type="text/html"
+    )

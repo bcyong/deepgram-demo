@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Deepgram Audit Interface</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; }
+    label { display: block; margin-top: 1rem; }
+    textarea, input[type="text"] { width: 100%; padding: 0.5rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; }
+    .nav { margin-bottom: 2rem; }
+    .nav a { color: #0066cc; text-decoration: none; }
+    .nav a:hover { text-decoration: underline; }
+    .section { margin-bottom: 2rem; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="/">← Back to Transcription Demo</a>
+  </div>
+
+  <h1>Deepgram Audit Interface</h1>
+
+  <div class="section">
+    <h2>Text-to-Text WER Audit</h2>
+    <form id="text-audit-form">
+      <label>Reference Text:
+        <textarea id="reference-text" rows="4" placeholder="Enter the reference transcript..." required></textarea>
+      </label>
+
+      <label>Hypothesis Text:
+        <textarea id="hypothesis-text" rows="4" placeholder="Enter the hypothesis transcript..." required></textarea>
+      </label>
+
+      <button type="submit">Calculate WER</button>
+    </form>
+    <pre id="text-output">Waiting for submission...</pre>
+  </div>
+
+  <div class="section">
+    <h2>Audio URL WER Audit</h2>
+    <form id="audio-url-audit-form">
+      <label>Reference Text:
+        <textarea id="reference-text-url" rows="4" placeholder="Enter the reference transcript..." required></textarea>
+      </label>
+
+      <label>Hypothesis Audio URL:
+        <input type="text" id="hypothesis-url" placeholder="https://example.com/audio.mp3" required />
+      </label>
+
+      <button type="submit">Calculate WER</button>
+    </form>
+    <pre id="audio-url-output">Waiting for submission...</pre>
+  </div>
+
+  <div class="section">
+    <h2>Audio File WER Audit</h2>
+    <form id="audio-file-audit-form">
+      <label>Reference Text:
+        <textarea id="reference-text-file" rows="4" placeholder="Enter the reference transcript..." required></textarea>
+      </label>
+
+      <label>Audio File:
+        <input type="file" id="audio-file" accept="audio/*" required />
+      </label>
+
+      <button type="submit">Calculate WER</button>
+    </form>
+    <pre id="audio-file-output">Waiting for submission...</pre>
+  </div>
+
+  <script>
+    // Text-to-Text WER Audit
+    document.getElementById('text-audit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const output = document.getElementById('text-output');
+      
+      const payload = {
+        reference: document.getElementById('reference-text').value,
+        hypothesis: document.getElementById('hypothesis-text').value
+      };
+
+      output.textContent = "Calculating WER...";
+      try {
+        const res = await fetch('/api/v1/audit/text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    // Audio URL WER Audit
+    document.getElementById('audio-url-audit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const output = document.getElementById('audio-url-output');
+      
+      const payload = {
+        reference: document.getElementById('reference-text-url').value,
+        hypothesis_url: document.getElementById('hypothesis-url').value
+      };
+
+      output.textContent = "Transcribing audio and calculating WER...";
+      try {
+        const res = await fetch('/api/v1/audit/audio-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    // Audio File WER Audit
+    document.getElementById('audio-file-audit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const output = document.getElementById('audio-file-output');
+      
+      const reference = document.getElementById('reference-text-file').value;
+      const audioFile = document.getElementById('audio-file').files[0];
+
+      const formData = new FormData();
+      formData.append('audio_file', audioFile);
+
+      output.textContent = "Transcribing audio and calculating WER...";
+      try {
+        const res = await fetch(`/api/v1/audit/audio-file?reference=${encodeURIComponent(reference)}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html> 
