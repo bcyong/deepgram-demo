@@ -127,6 +127,8 @@ async def transcribe_audio_batch(
                 extra_list = [f"{key}:{value}" for key, value in extra_data.items()]
                 options["extra"] = extra_list
 
+                logger.info(f"Deepgram request options: {options}")
+
                 # Submit transcription request to Deepgram
                 # The extra data will be passed back in the webhook callback
                 response = deepgram_client.transcribe_audio_url(audio_url, **options)
