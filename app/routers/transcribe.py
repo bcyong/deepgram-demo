@@ -8,7 +8,7 @@ from loguru import logger
 from ..utils.keyterm_manager import get_all_keyterms
 from ..utils.keyword_manager import get_all_keywords
 
-NOVA_3_MODELS = ["nova-3", "nove-3-general", "nove-3-medical"]
+NOVA_3_MODELS = ["nova-3", "nova-3-general", "nova-3-medical"]
 
 
 class TranscribeAudioRequest(BaseModel):
