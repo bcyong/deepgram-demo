@@ -96,6 +96,83 @@ def build_transcript(results: Dict[str, Any], diarize: bool = False) -> str:
         return alternative.get("transcript", "")
 
 
+def extract_summary(results_data: Dict[str, Any], summarize: str) -> str:
+    """
+    Extract summary from Deepgram results.
+
+    Args:
+        results_data: The results object from Deepgram webhook data
+        summarize: The summarize parameter (e.g., "v2")
+
+    Returns:
+        Summary as a string, or empty string if not found
+    """
+    summary = ""
+    if summarize == "v2":
+        summary_dict = results_data.get("summary", None)
+        if summary_dict:
+            if summary_dict.get("success", False):
+                summary = summary_dict.get("short", "")
+
+    return summary
+
+
+def extract_intents(results_data: Dict[str, Any]) -> List[str]:
+    """
+    Extract intent names from Deepgram results.
+
+    Args:
+        results_data: The results object from Deepgram webhook data
+
+    Returns:
+        List of intent names as strings
+    """
+    intents = []
+    intents_data = results_data.get("intents", {})
+
+    if intents_data and "segments" in intents_data:
+        for segment in intents_data["segments"]:
+            if "intents" in segment:
+                for intent_obj in segment["intents"]:
+                    intent_name = intent_obj.get("intent")
+                    if intent_name:
+                        intents.append(intent_name)
+
+    return intents
+
+
+def build_filename(
+    use_url_as_filename: bool,
+    filename_prefix: str,
+    storage_folder_name: str,
+    audio_url: str,
+    batch_id: str,
+    url_index: int,
+) -> str:
+    """
+    Build filename for the transcription output.
+
+    Args:
+        use_url_as_filename: Whether to use the audio URL as filename
+        filename_prefix: Prefix for the filename
+        storage_folder_name: Folder name for storage
+        audio_url: The audio URL
+        batch_id: The batch ID
+        url_index: The URL index within the batch
+
+    Returns:
+        Filename as a string
+    """
+    if use_url_as_filename:
+        filename = f"{audio_url.split('/')[-1]}.json"
+    elif filename_prefix:
+        filename = f"{filename_prefix}_{url_index}.json"
+    else:
+        filename = f"{batch_id}_url_{url_index}.json"
+
+    return filename
+
+
 @router.post("/deepgram/batch_url_completed", tags=["webhook"])
 async def deepgram_webhook(request: Request):
     """
@@ -117,6 +194,7 @@ async def deepgram_webhook(request: Request):
         metadata = webhook_data.get("metadata", {})
         request_id = metadata.get("request_id")
         results_data = webhook_data.get("results", {})
+        logger.info(f"Results data: {results_data}")
 
         # Extract extra data from the metadata
         extra_data = metadata.get("extra", {})
@@ -141,20 +219,21 @@ async def deepgram_webhook(request: Request):
             else False
         )
         filename_prefix = extra_data.get("filename_prefix", "")
+        storage_location = extra_data.get("storage_location", "")
+        storage_folder_name = extra_data.get("storage_folder_name", "")
         user_callback_url = extra_data.get("user_callback_url", "")
 
         logger.info(f"Extra data: {extra_data}")
 
         # Extract transcription results and build transcript
-        results = webhook_data.get("results", {})
         try:
-            transcript = build_transcript(results, diarize)
+            transcript = build_transcript(results_data, diarize)
         except ValueError as e:
             logger.error(f"Error building transcript: {str(e)}")
             raise HTTPException(status_code=400, detail=str(e))
 
         # Get confidence from the first alternative
-        channels = results.get("channels", [])
+        channels = results_data.get("channels", [])
         confidence = 0.0
         if channels and channels[0].get("alternatives"):
             confidence = channels[0]["alternatives"][0].get("confidence", 0.0)
@@ -162,33 +241,23 @@ async def deepgram_webhook(request: Request):
         logger.info(f"Transcript: {transcript[:100]}... (confidence: {confidence})")
 
         # Extract summary from the results
-        summary = ""
-        if summarize == "v2":
-            summary_dict = results_data.get("summary", None)
-            if summary_dict:
-                if summary_dict.get("success", False):
-                    summary = summary_dict.get("short", None)
-
+        if summarize:
+            summary = extract_summary(results_data, summarize)
+        else:
+            summary = ""
         logger.info(f"Summary: {summary}")
 
         # Extract sentiment and intents from the results
-        sentiment = ""
+        # sentiment = ""
 
-        if sentiment:
-            sentiment = results.get("sentiment", None)
+        # if sentiment:
+        #     sentiment = results_data.get("sentiment", None)
 
         # Extract intents from the results
-        intents = []
         if intents_enabled:
-            intents_data = results_data.get("intents", {})
-            if intents_data and "segments" in intents_data:
-                for segment in intents_data["segments"]:
-                    if "intents" in segment:
-                        for intent_obj in segment["intents"]:
-                            intent_name = intent_obj.get("intent")
-                            if intent_name:
-                                intents.append(intent_name)
-
+            intents = extract_intents(results_data)
+        else:
+            intents = []
         logger.info(f"Intents: {intents}")
 
         # Create formatted response
@@ -210,12 +279,14 @@ async def deepgram_webhook(request: Request):
         # Convert to JSON for file output
         output_json = formatted_response.model_dump()
 
-        if use_url_as_filename:
-            filename = f"{audio_url.split('/')[-1]}.json"
-        elif filename_prefix != "":
-            filename = f"{filename_prefix}_{url_index}.json"
-        else:
-            filename = f"{batch_id}_url_{url_index}.json"
+        filename = build_filename(
+            use_url_as_filename=use_url_as_filename,
+            filename_prefix=filename_prefix,
+            storage_folder_name=storage_folder_name,
+            audio_url=audio_url,
+            batch_id=batch_id,
+            url_index=url_index,
+        )
 
         # Create temporary file and upload to GCS
         try:

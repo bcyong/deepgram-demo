@@ -18,10 +18,10 @@ class TranscribeAudioRequest(BaseModel):
     keyterm: List[str] = []
     keywords: List[str] = []
     use_url_as_filename: bool = False
-    filename_prefix: Optional[str] = None
-    storage_location: Optional[str] = None
-    storage_folder_name: Optional[str] = None
-    user_callback_url: Optional[str] = None
+    filename_prefix: Optional[str] = ""
+    storage_location: Optional[str] = ""
+    storage_folder_name: Optional[str] = ""
+    user_callback_url: Optional[str] = ""
 
 
 class TranscribeAudioResponse(BaseModel):
