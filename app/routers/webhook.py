@@ -129,6 +129,7 @@ async def deepgram_webhook(request: Request):
             confidence=confidence,
             summary=summary,
             sentiment=sentiment,
+            sentiment_score=sentiment_score,
             intents=intents,
             submitted_at=submitted_at,
             completed_at=datetime.now(timezone.utc).isoformat(),
