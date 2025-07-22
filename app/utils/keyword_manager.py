@@ -39,17 +39,18 @@ async def get_all_keywords():
         all_keys = await storage_client.get_all_keys_with_prefix("keyword:")
 
         if all_keys:
-            result = {}
+            result = []
             for key in all_keys:
                 key_str = key.decode("utf-8").replace("keyword:", "")
                 value = await storage_client.get_value(f"keyword:{key_str}")
                 if value:
-                    result[key_str] = (
+                    value_str = (
                         value.decode("utf-8") if isinstance(value, bytes) else value
                     )
+                    result.append(f"{key_str}:{value_str}")
             return result
         else:
-            return {}
+            return []
     except Exception as e:
         logger.warning(f"Error getting keywords: {e}")
-        return {}
+        return []

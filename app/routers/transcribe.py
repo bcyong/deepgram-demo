@@ -5,6 +5,10 @@ from ..utils.deepgram_client import create_deepgram_client
 import uuid
 from datetime import datetime, timezone
 from loguru import logger
+from ..utils.keyterm_manager import get_all_keyterms
+from ..utils.keyword_manager import get_all_keywords
+
+NOVA_3_MODELS = ["nova-3", "nove-3-general", "nove-3-medical"]
 
 
 class TranscribeAudioRequest(BaseModel):
@@ -71,6 +75,17 @@ async def transcribe_audio_batch(
             f"{base_url}/api/v1/webhook/deepgram/batch_url_completed"
         )
 
+        # Build full list of keyterms or keywords depending on model
+        if request.model in NOVA_3_MODELS:
+            global_keyterms = await get_all_keyterms()
+            keyterms = global_keyterms + request.keyterm
+            keywords = []
+        else:
+            # For other models: merge list of "keyword:int" strings with dict of "key:int"
+            global_keywords = await get_all_keywords()
+            keywords = global_keywords + request.keywords
+            keyterms = []
+
         # Submit each URL for transcription with extra data
         for i, audio_url in enumerate(request.audio_urls):
             try:
@@ -103,8 +118,8 @@ async def transcribe_audio_batch(
                     "intents": request.intents,
                     "topics": request.topics,
                     "diarize": request.diarize,
-                    "keyterm": request.keyterm,
-                    "keywords": request.keywords,
+                    "keyterm": keyterms,
+                    "keywords": keywords,
                     "callback": internal_callback_url,  # Full URL for internal webhook endpoint
                 }
 
