@@ -81,7 +81,7 @@ async def deepgram_webhook(request: Request):
             else False
         )
         filename_prefix = extra_data.get("filename_prefix", "")
-        strage_bucket_name = extra_data.get("storage_bucket_name", "")
+        storage_bucket_name = extra_data.get("storage_bucket_name", "")
         storage_folder_name = extra_data.get("storage_folder_name", "")
         user_callback_url = extra_data.get("user_callback_url", "")
 
