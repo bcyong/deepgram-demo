@@ -91,7 +91,7 @@ def extract_summary(results_data: Dict[str, Any], summarize: str) -> str:
         summary_dict = results_data.get("summary", None)
         logger.info(f"Summary dict: {summary_dict}")
         if summary_dict:
-            if summary_dict.get("success", False):
+            if summary_dict.get("result", "") == "success":
                 summary = summary_dict.get("short", "")
 
     return summary
