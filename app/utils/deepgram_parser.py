@@ -151,6 +151,30 @@ def extract_intents(results_data: Dict[str, Any]) -> List[str]:
     return intents
 
 
+def extract_sentiment(results_data: Dict[str, Any]) -> tuple[str, float]:
+    """
+    Extract sentiment from Deepgram results.
+
+    Args:
+        results_data: The results object from Deepgram webhook data
+
+    Returns:
+        Sentiment as a string, or empty string if not found
+    """
+    sentiment = ""
+    sentiments_data = results_data.get("sentiments", {})
+
+    if (
+        sentiments_data
+        and "average" in sentiments_data
+        and "sentiment" in sentiments_data["average"]
+    ):
+        sentiment = sentiments_data["average"]["sentiment"]
+        sentiment_score = sentiments_data["average"]["score"]
+
+    return sentiment, sentiment_score
+
+
 def build_filename(
     use_url_as_filename: bool,
     filename_prefix: str,

@@ -11,6 +11,7 @@ from ..utils.deepgram_parser import (
     build_transcript,
     extract_summary,
     extract_intents,
+    extract_sentiment,
     build_filename,
 )
 
@@ -29,6 +30,7 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     confidence: float
     summary: Optional[str] = None
     sentiment: Optional[str] = None
+    sentiment_score: Optional[float] = None
     intents: Optional[List[str]] = None
     submitted_at: str
     completed_at: str
@@ -62,7 +64,7 @@ async def deepgram_webhook(request: Request):
         url_index = extra_data.get("url_index", 0)
         audio_url = extra_data.get("audio_url", "unknown")
         summarize = extra_data.get("summarize", "false")
-        sentiment = (
+        sentiment_enabled = (
             True if extra_data.get("sentiment", "False").lower() == "true" else False
         )
         intents_enabled = (
@@ -102,9 +104,12 @@ async def deepgram_webhook(request: Request):
         logger.info(f"Summary: {summary}")
 
         # Extract sentiment from the results
-        sentiment = ""
-        # if sentiment:
-        #     sentiment = results_data.get("sentiment", None)
+        if sentiment_enabled:
+            sentiment, sentiment_score = extract_sentiment(results_data)
+        else:
+            sentiment = ""
+            sentiment_score = 0.0
+        logger.info(f"Sentiment: {sentiment} (score: {sentiment_score})")
 
         # Extract intents from the results
         if intents_enabled:
