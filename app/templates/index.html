@@ -22,8 +22,8 @@
   <h1>Deepgram Transcription Demo</h1>
 
   <form id="transcribe-form">
-    <label>Audio URL:
-      <input type="text" id="audio-url" placeholder="https://example.com/audio.mp3" required />
+    <label>Audio URLs (comma-separated):
+      <input type="text" id="audio-urls" placeholder="https://example.com/audio1.mp3,https://example.com/audio2.mp3" required />
     </label>
 
     <label>Keyterms (comma-separated):
@@ -51,11 +51,11 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const audioUrl = document.getElementById('audio-url').value;
+      const audioUrls = document.getElementById('audio-urls').value.split(',').map(s => s.trim()).filter(Boolean);
       const keyterms = document.getElementById('keyterms').value.split(',').map(s => s.trim()).filter(Boolean);
 
       const payload = {
-        audio_urls: [audioUrl],
+        audio_urls: audioUrls,
         summarize: "v2",
         sentiment: document.getElementById('sentiment').checked,
         intents: document.getElementById('intents').checked,
