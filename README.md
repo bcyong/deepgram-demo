@@ -11,6 +11,7 @@ The system is designed to simulate a realistic customer implementation scenario 
 ### Core Capabilities
 - **Batch transcription of audio URLs** using Deepgram's asynchronous API
 - **Batch transcription of all audio files in a GCS bucket/folder** with a single API call
+- **Phonetic search term support**: Specify search terms or phrases to be detected in audio, with results including channel, snippet, and start time for each detected term
 - **Webhook support** for processing transcription results with:
   - Automatic summarization
   - Sentiment analysis with confidence scores
@@ -102,7 +103,7 @@ The application provides a user-friendly web interface for transcription and aud
 - **Features**:
   - Submit audio URLs for transcription
   - Submit all audio files in a GCS bucket/folder for transcription
-  - Configure keyterms and audio intelligence options
+  - Configure keyterms/keywords, search terms (phonetic search), and audio intelligence options
   - Real-time response display
   - Link to audit interface
 
