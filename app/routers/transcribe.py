@@ -175,6 +175,7 @@ async def submit_transcription_requests(
             logger.error(
                 f"Error submitting transcription for URL {audio_url}: {str(e)}"
             )
+            logger.error(f"Full error details: {type(e).__name__}: {str(e)}")
             error_count += 1
 
     logger.info(
@@ -291,6 +292,13 @@ async def transcribe_gcs_batch(request: TranscribeGCSRequest, http_request: Requ
                 request.bucket_name, audio_files
             )
             logger.info(f"Generated {len(audio_urls)} signed URLs for Deepgram access")
+            
+            if not audio_urls:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No valid files found in GCS bucket {request.bucket_name}, folder: {request.folder_name or 'root'}"
+                )
+                
         except Exception as e:
             raise HTTPException(
                 status_code=500,
