@@ -159,6 +159,7 @@ def generate_signed_urls(
             signed_url = blob.generate_signed_url(
                 expiration=expiration_minutes * 60,  # Convert minutes to seconds
                 method="GET",
+                version="v4",  # Use v4 signing for better compatibility
             )
             signed_urls.append(signed_url)
             logger.info(f"Generated signed URL for {file_name}: {signed_url}")
