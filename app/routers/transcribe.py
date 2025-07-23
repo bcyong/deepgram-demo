@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from ..utils.deepgram_client import create_deepgram_client
-from ..utils.google_cloud_storage_client import list_files
+from ..utils.google_cloud_storage_client import list_files, generate_signed_urls
 import uuid
 from datetime import datetime, timezone
 from loguru import logger
@@ -285,11 +285,17 @@ async def transcribe_gcs_batch(request: TranscribeGCSRequest, http_request: Requ
                 detail=f"No files found in GCS bucket {request.bucket_name}, folder: {request.folder_name or 'root'}",
             )
 
-        # Convert file names to GCS URLs
-        audio_urls = [
-            f"gs://{request.bucket_name}/{file_name}" for file_name in audio_files
-        ]
-        logger.info(f"Converted {len(audio_urls)} files to GCS URLs")
+        # Generate signed URLs for GCS blobs so Deepgram can access them
+        try:
+            audio_urls = generate_signed_urls(
+                request.bucket_name, audio_files, expiration_minutes=60
+            )
+            logger.info(f"Generated {len(audio_urls)} signed URLs for Deepgram access")
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate signed URLs for GCS bucket {request.bucket_name}: {str(e)}",
+            )
 
         # Create a TranscribeAudioRequest object for the helper function
         class GCSRequestAdapter:

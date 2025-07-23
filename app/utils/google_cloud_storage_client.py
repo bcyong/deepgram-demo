@@ -4,6 +4,7 @@ Google Cloud Storage client utilities for file upload operations.
 
 from google.cloud import storage
 from loguru import logger
+from typing import List
 
 
 def upload_file(
@@ -127,5 +128,48 @@ def list_files(bucket_name: str, folder_name: str = "") -> list[str]:
     except Exception as e:
         logger.error(
             f"Failed to list files from GCS bucket {bucket_name}, folder {folder_name}: {str(e)}"
+        )
+        raise
+
+
+def generate_signed_urls(
+    bucket_name: str, file_names: List[str], expiration_minutes: int = 60
+) -> List[str]:
+    """
+    Generate signed URLs for GCS blobs so they can be accessed by external services.
+
+    Args:
+        bucket_name: Name of the GCS bucket
+        file_names: List of file names in the bucket
+        expiration_minutes: How long the signed URLs should be valid (default: 60 minutes)
+
+    Returns:
+        List of signed URLs for the files
+
+    Raises:
+        Exception: For GCS-related errors
+    """
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+        signed_urls = []
+
+        for file_name in file_names:
+            blob = bucket.blob(file_name)
+            signed_url = blob.generate_signed_url(
+                expiration=expiration_minutes * 60,  # Convert minutes to seconds
+                method="GET",
+            )
+            signed_urls.append(signed_url)
+            logger.info(f"Generated signed URL for {file_name}")
+
+        logger.info(
+            f"Generated {len(signed_urls)} signed URLs for bucket {bucket_name}"
+        )
+        return signed_urls
+
+    except Exception as e:
+        logger.error(
+            f"Failed to generate signed URLs for bucket {bucket_name}: {str(e)}"
         )
         raise
