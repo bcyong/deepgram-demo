@@ -245,6 +245,7 @@ async def deepgram_webhook(request: Request):
                 "extreme_sentiment_scores": extreme_sentiment_scores,
                 "intents": intents,
                 "topics": topics,
+                "search_terms": search_terms,
                 "submitted_at": submitted_at,
                 "completed_at": completed_at,
             }
