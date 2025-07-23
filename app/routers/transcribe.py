@@ -288,7 +288,7 @@ async def transcribe_gcs_batch(request: TranscribeGCSRequest, http_request: Requ
         # Generate signed URLs for GCS blobs so Deepgram can access them
         try:
             audio_urls = generate_signed_urls(
-                request.bucket_name, audio_files, expiration_minutes=60
+                request.bucket_name, audio_files
             )
             logger.info(f"Generated {len(audio_urls)} signed URLs for Deepgram access")
         except Exception as e:

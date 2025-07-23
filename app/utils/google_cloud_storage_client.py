@@ -133,7 +133,7 @@ def list_files(bucket_name: str, folder_name: str = "") -> list[str]:
 
 
 def generate_signed_urls(
-    bucket_name: str, file_names: List[str], expiration_minutes: int = 60
+    bucket_name: str, file_names: List[str], expiration_minutes: int = 5
 ) -> List[str]:
     """
     Generate signed URLs for GCS blobs so they can be accessed by external services.
@@ -161,7 +161,7 @@ def generate_signed_urls(
                 method="GET",
             )
             signed_urls.append(signed_url)
-            logger.info(f"Generated signed URL for {file_name}")
+            logger.info(f"Generated signed URL for {file_name}: {signed_url}")
 
         logger.info(
             f"Generated {len(signed_urls)} signed URLs for bucket {bucket_name}"
