@@ -241,8 +241,6 @@ def extract_search_hits(results_data: Dict[str, Any]) -> List[Dict[str, Any]]:
                             "start": start,
                         }
                     )
-                    # Only record the first hit above threshold for each term per channel
-                    break
     return search_hits
 
 
