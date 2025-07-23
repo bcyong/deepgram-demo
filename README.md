@@ -101,6 +101,7 @@ The application provides a user-friendly web interface for transcription and aud
 - **URL**: `http://localhost:8000/`
 - **Features**:
   - Submit audio URLs for transcription
+  - Submit all audio files in a GCS bucket/folder for transcription
   - Configure keyterms and audio intelligence options
   - Real-time response display
   - Link to audit interface
