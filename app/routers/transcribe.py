@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from ..utils.deepgram_client import create_deepgram_client
+from ..utils.google_cloud_storage_client import list_files
 import uuid
 from datetime import datetime, timezone
 from loguru import logger
@@ -32,6 +33,37 @@ class TranscribeAudioRequest(BaseModel):
 class TranscribeAudioResponse(BaseModel):
     batch_id: str
     audio_urls: List[str]
+    status: str
+    submitted_at: str
+    user_callback_url: str
+    success_count: int
+    error_count: int
+
+
+class TranscribeGCSRequest(BaseModel):
+    bucket_name: str
+    folder_name: str = ""
+    language: str = "en-US"
+    model: str = "nova-3"
+    summarize: str = "v2"
+    sentiment: bool = True
+    intents: bool = True
+    topics: bool = True
+    diarize: bool = True
+    keyterm: List[str] = []
+    keywords: List[str] = []
+    use_url_as_filename: bool = False
+    filename_prefix: Optional[str] = ""
+    storage_bucket_name: Optional[str] = ""
+    storage_folder_name: Optional[str] = ""
+    user_callback_url: Optional[str] = ""
+
+
+class TranscribeGCSResponse(BaseModel):
+    batch_id: str
+    bucket_name: str
+    folder_name: str
+    audio_files: List[str]
     status: str
     submitted_at: str
     user_callback_url: str
@@ -209,4 +241,101 @@ async def transcribe_audio_batch(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to submit transcription batch: {str(e)}"
+        )
+
+
+@router.post("/batch-gcs", response_model=TranscribeGCSResponse, tags=["transcribe"])
+async def transcribe_gcs_batch(request: TranscribeGCSRequest, http_request: Request):
+    """
+    Submit a batch of audio files from Google Cloud Storage for transcription.
+
+    This endpoint lists all files in the specified GCS bucket and folder,
+    converts them to GCS URLs, and submits them for transcription.
+    Each transcription will be processed asynchronously and results will be
+    sent to the internal webhook endpoint when complete.
+
+    The user callback URL will be called when each transcription is complete.
+    All request tracking is handled via extra data passed to Deepgram.
+    """
+
+    logger.info(f"Transcribe GCS batch request: {request}")
+    try:
+        # Generate a unique request ID for this batch
+        batch_id = str(uuid.uuid4())
+
+        # Validate input
+        if not request.bucket_name:
+            raise HTTPException(status_code=400, detail="Bucket name is required")
+
+        # List files in the GCS bucket and folder
+        try:
+            audio_files = list_files(request.bucket_name, request.folder_name)
+            logger.info(
+                f"Found {len(audio_files)} files in GCS bucket {request.bucket_name}, folder: {request.folder_name or 'root'}"
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to list files in GCS bucket {request.bucket_name}: {str(e)}",
+            )
+
+        if not audio_files:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No files found in GCS bucket {request.bucket_name}, folder: {request.folder_name or 'root'}",
+            )
+
+        # Convert file names to GCS URLs
+        audio_urls = [
+            f"gs://{request.bucket_name}/{file_name}" for file_name in audio_files
+        ]
+        logger.info(f"Converted {len(audio_urls)} files to GCS URLs")
+
+        # Create a TranscribeAudioRequest object for the helper function
+        class GCSRequestAdapter:
+            def __init__(self, gcs_request: TranscribeGCSRequest):
+                self.audio_urls = audio_urls  # Will be set after URL conversion
+                self.language = gcs_request.language
+                self.model = gcs_request.model
+                self.summarize = gcs_request.summarize
+                self.sentiment = gcs_request.sentiment
+                self.intents = gcs_request.intents
+                self.topics = gcs_request.topics
+                self.diarize = gcs_request.diarize
+                self.keyterm = gcs_request.keyterm
+                self.keywords = gcs_request.keywords
+                self.use_url_as_filename = gcs_request.use_url_as_filename
+                self.filename_prefix = gcs_request.filename_prefix
+                self.storage_bucket_name = gcs_request.storage_bucket_name
+                self.storage_folder_name = gcs_request.storage_folder_name
+                self.user_callback_url = gcs_request.user_callback_url
+
+        # Create adapter and set the audio URLs
+        adapter_request = GCSRequestAdapter(request)
+        adapter_request.audio_urls = audio_urls
+
+        # Submit transcription requests using the existing helper
+        submission_results = await submit_transcription_requests(
+            http_request, audio_urls, batch_id, adapter_request
+        )
+
+        return TranscribeGCSResponse(
+            batch_id=batch_id,
+            bucket_name=request.bucket_name,
+            folder_name=request.folder_name,
+            audio_files=audio_files,
+            status="submitted",
+            submitted_at=datetime.now(timezone.utc).isoformat(),
+            user_callback_url=request.user_callback_url or "",
+            success_count=submission_results["success_count"],
+            error_count=submission_results["error_count"],
+        )
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to submit GCS transcription batch: {str(e)}",
         )

@@ -21,6 +21,7 @@
 
   <h1>Deepgram Transcription Demo</h1>
 
+  <h2>URL-based Transcription</h2>
   <form id="transcribe-form">
     <label>Audio URLs (comma-separated):
       <input type="text" id="audio-urls" placeholder="https://example.com/audio1.mp3,https://example.com/audio2.mp3" required />
@@ -41,11 +42,37 @@
     <button type="submit">Submit for Transcription</button>
   </form>
 
+  <h2>GCS-based Transcription</h2>
+  <form id="gcs-form">
+    <label>GCS Bucket Name:
+      <input type="text" id="gcs-bucket" placeholder="my-audio-bucket" required />
+    </label>
+
+    <label>GCS Folder Name (optional):
+      <input type="text" id="gcs-folder" placeholder="recordings/2024" />
+    </label>
+
+    <label>Keyterms (comma-separated):
+      <input type="text" id="gcs-keyterms" placeholder="custom,terms,here" />
+    </label>
+
+    <label>Enable Audio Intelligence:
+      <input type="checkbox" id="gcs-summarize" checked /> Summarize
+      <input type="checkbox" id="gcs-sentiment" checked /> Sentiment
+      <input type="checkbox" id="gcs-intents" checked /> Intents
+      <input type="checkbox" id="gcs-topics" checked /> Topics
+      <input type="checkbox" id="gcs-diarize" checked /> Diarize
+    </label>
+
+    <button type="submit">Submit GCS for Transcription</button>
+  </form>
+
   <h2>Response</h2>
   <pre id="output">Waiting for submission...</pre>
 
   <script>
     const form = document.getElementById('transcribe-form');
+    const gcsForm = document.getElementById('gcs-form');
     const output = document.getElementById('output');
 
     form.addEventListener('submit', async (e) => {
@@ -65,9 +92,43 @@
         use_url_as_filename: true,
       };
 
-      output.textContent = "Submitting...";
+      output.textContent = "Submitting URL-based transcription...";
       try {
         const res = await fetch('/api/v1/transcribe/batch-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = 'Error: ' + err.message;
+      }
+    });
+
+    gcsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const bucketName = document.getElementById('gcs-bucket').value.trim();
+      const folderName = document.getElementById('gcs-folder').value.trim();
+      const keyterms = document.getElementById('gcs-keyterms').value.split(',').map(s => s.trim()).filter(Boolean);
+
+      const payload = {
+        bucket_name: bucketName,
+        folder_name: folderName,
+        summarize: "v2",
+        sentiment: document.getElementById('gcs-sentiment').checked,
+        intents: document.getElementById('gcs-intents').checked,
+        topics: document.getElementById('gcs-topics').checked,
+        diarize: document.getElementById('gcs-diarize').checked,
+        keyterm: keyterms,
+        use_url_as_filename: true,
+      };
+
+      output.textContent = "Submitting GCS-based transcription...";
+      try {
+        const res = await fetch('/api/v1/transcribe/batch-gcs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
