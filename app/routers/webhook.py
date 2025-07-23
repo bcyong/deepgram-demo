@@ -15,6 +15,7 @@ from ..utils.deepgram_parser import (
     extract_sentiment,
     extract_topics,
     build_filename,
+    extract_search_hits,
 )
 
 router = APIRouter(prefix="/api/v1/webhook")
@@ -36,6 +37,7 @@ class DeepgramBatchURLCompletedWebhookResponse(BaseModel):
     extreme_sentiment_scores: Optional[List[float]] = None
     intents: Optional[List[str]] = None
     topics: Optional[List[str]] = None
+    search_terms: Optional[List[Dict[str, Any]]] = None
     submitted_at: str
     completed_at: str
 
@@ -151,6 +153,10 @@ async def deepgram_webhook(request: Request):
             topics = []
         logger.info(f"Topics: {topics}")
 
+        # Extract search term hits from the results
+        search_terms = extract_search_hits(results_data)
+        logger.info(f"Search term hits: {search_terms}")
+
         completed_at = datetime.now(timezone.utc).isoformat()
 
         # Create formatted response
@@ -168,6 +174,7 @@ async def deepgram_webhook(request: Request):
             extreme_sentiment_scores=extreme_sentiment_scores,
             intents=intents,
             topics=topics,
+            search_terms=search_terms,
             submitted_at=submitted_at,
             completed_at=completed_at,
         )

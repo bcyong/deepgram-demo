@@ -4,6 +4,7 @@ from loguru import logger
 INTENT_CONFIDENCE_THRESHOLD = 0.1
 SENTIMENT_EXTREME_THRESHOLD = 0.7
 TOPIC_CONFIDENCE_THRESHOLD = 0.1
+SEARCH_CONFIDENCE_THRESHOLD = 0.8
 
 
 def format_timestamp(seconds: float) -> str:
@@ -208,6 +209,41 @@ def extract_topics(results_data: Dict[str, Any]) -> List[str]:
                         topics.add(topic_name)
 
     return list(topics)
+
+
+def extract_search_hits(results_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Extract search term hits from Deepgram results.
+
+    Args:
+        results_data: The results object from Deepgram webhook data
+
+    Returns:
+        List of dicts with 'channel', 'term', 'snippet', and 'start' for each search hit above confidence threshold
+    """
+    search_hits = []
+    channels = results_data.get("channels", [])
+    for channel_idx, channel in enumerate(channels):
+        search_results = channel.get("search", [])
+        for search_obj in search_results:
+            term = search_obj.get("query", "")
+            hits = search_obj.get("hits", [])
+            for hit in hits:
+                confidence = hit.get("confidence", 0.0)
+                if confidence >= SEARCH_CONFIDENCE_THRESHOLD:
+                    snippet = hit.get("snippet", "")
+                    start = hit.get("start", 0.0)
+                    search_hits.append(
+                        {
+                            "channel": channel_idx,
+                            "term": term,
+                            "snippet": snippet,
+                            "start": start,
+                        }
+                    )
+                    # Only record the first hit above threshold for each term per channel
+                    break
+    return search_hits
 
 
 def build_filename(

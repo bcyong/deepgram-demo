@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from loguru import logger
 from ..utils.keyterm_manager import get_all_keyterms
 from ..utils.keyword_manager import get_all_keywords
+from urllib.parse import quote_plus
 
 NOVA_3_MODELS = ["nova-3", "nova-3-general", "nova-3-medical"]
 
@@ -23,6 +24,7 @@ class TranscribeAudioRequest(BaseModel):
     diarize: bool = True
     keyterm: List[str] = []
     keywords: List[str] = []
+    search_terms: List[str] = []
     use_url_as_filename: bool = False
     filename_prefix: Optional[str] = ""
     storage_bucket_name: Optional[str] = ""
@@ -52,6 +54,7 @@ class TranscribeGCSRequest(BaseModel):
     diarize: bool = True
     keyterm: List[str] = []
     keywords: List[str] = []
+    search_terms: List[str] = []
     use_url_as_filename: bool = False
     filename_prefix: Optional[str] = ""
     storage_bucket_name: Optional[str] = ""
@@ -117,6 +120,12 @@ async def submit_transcription_requests(
         logger.info(f"Keywords: {keywords}")
         keyterms = []
 
+    # URL-encode search terms if present
+    if hasattr(request, "search_terms") and request.search_terms:
+        encoded_search_terms = [quote_plus(term) for term in request.search_terms]
+    else:
+        encoded_search_terms = []
+
     # Track success and error counts
     success_count = 0
     error_count = 0
@@ -155,6 +164,7 @@ async def submit_transcription_requests(
                 "diarize": request.diarize,
                 "keyterm": keyterms,
                 "keywords": keywords,
+                "search": encoded_search_terms,
                 "callback": internal_callback_url,  # Full URL for internal webhook endpoint
             }
 
@@ -288,17 +298,15 @@ async def transcribe_gcs_batch(request: TranscribeGCSRequest, http_request: Requ
 
         # Generate signed URLs for GCS blobs so Deepgram can access them
         try:
-            audio_urls = generate_signed_urls(
-                request.bucket_name, audio_files
-            )
+            audio_urls = generate_signed_urls(request.bucket_name, audio_files)
             logger.info(f"Generated {len(audio_urls)} signed URLs for Deepgram access")
-            
+
             if not audio_urls:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"No valid files found in GCS bucket {request.bucket_name}, folder: {request.folder_name or 'root'}"
+                    detail=f"No valid files found in GCS bucket {request.bucket_name}, folder: {request.folder_name or 'root'}",
                 )
-                
+
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -318,6 +326,7 @@ async def transcribe_gcs_batch(request: TranscribeGCSRequest, http_request: Requ
                 self.diarize = gcs_request.diarize
                 self.keyterm = gcs_request.keyterm
                 self.keywords = gcs_request.keywords
+                self.search_terms = gcs_request.search_terms
                 self.use_url_as_filename = gcs_request.use_url_as_filename
                 self.filename_prefix = gcs_request.filename_prefix
                 self.storage_bucket_name = gcs_request.storage_bucket_name
