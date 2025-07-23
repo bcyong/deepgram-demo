@@ -10,6 +10,7 @@ The system is designed to simulate a realistic customer implementation scenario 
 
 ### Core Capabilities
 - **Batch transcription of audio URLs** using Deepgram's asynchronous API
+- **Batch transcription of all audio files in a GCS bucket/folder** with a single API call
 - **Webhook support** for processing transcription results with:
   - Automatic summarization
   - Sentiment analysis with confidence scores
@@ -74,6 +75,7 @@ deepgram-demo/
 | Method | Route                                                   | Description                                                      |
 |--------|---------------------------------------------------------|------------------------------------------------------------------|
 | POST   | `/api/v1/transcribe/batch-url`                          | Submit one or more audio URLs for Deepgram transcription         |
+| POST   | `/api/v1/transcribe/batch-gcs`                          | Submit all audio files in a GCS bucket/folder for batch transcription |
 | POST   | `/api/v1/webhook/deepgram/batch_url_completed`          | Deepgram callback receiver for transcription results             |
 | POST   | `/api/v1/audit/text`                                    | Compare reference and hypothesis transcripts for WER             |
 | POST   | `/api/v1/audit/audio-url`                               | Compare a Deepgram transcript (from URL) against reference       |
