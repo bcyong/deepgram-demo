@@ -87,15 +87,16 @@ def download_file(
         raise
 
 
-def list_files(bucket_name: str) -> list[str]:
+def list_files(bucket_name: str, folder_name: str = "") -> list[str]:
     """
-    List all files in a Google Cloud Storage bucket.
+    List all files in a Google Cloud Storage bucket within a specific folder.
 
     Args:
         bucket_name: Name of the GCS bucket to list files from
+        folder_name: Name of the folder within the bucket (optional)
 
     Returns:
-        list[str]: List of file names in the bucket
+        list[str]: List of file names in the bucket/folder
 
     Raises:
         Exception: For GCS-related errors
@@ -104,13 +105,27 @@ def list_files(bucket_name: str) -> list[str]:
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
 
-        logger.info(f"Listing files in bucket: {bucket_name}")
-        blobs = bucket.list_blobs()
-        file_names = [blob.name for blob in blobs]
+        # Normalize folder name to ensure it ends with '/'
+        if folder_name and not folder_name.endswith("/"):
+            folder_name = folder_name + "/"
 
-        logger.info(f"Found {len(file_names)} files in bucket {bucket_name}")
+        logger.info(
+            f"Listing files in bucket: {bucket_name}, folder: {folder_name or 'root'}"
+        )
+
+        # List blobs with prefix to filter by folder
+        blobs = bucket.list_blobs(prefix=folder_name)
+        file_names = [
+            blob.name for blob in blobs if not blob.name.endswith("/")
+        ]  # Exclude folder objects
+
+        logger.info(
+            f"Found {len(file_names)} files in bucket {bucket_name}, folder: {folder_name or 'root'}"
+        )
         return file_names
 
     except Exception as e:
-        logger.error(f"Failed to list files from GCS bucket {bucket_name}: {str(e)}")
+        logger.error(
+            f"Failed to list files from GCS bucket {bucket_name}, folder {folder_name}: {str(e)}"
+        )
         raise
